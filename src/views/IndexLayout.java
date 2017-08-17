@@ -10,17 +10,28 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 
+import constants.Config;
+
 /**
  *
  * @author ADMIN
  */
 public class IndexLayout extends javax.swing.JFrame {
 
+    protected BrowserView mBrowserView;
+    
     /**
      * Creates new form MainFrame
      */
     public IndexLayout() {
+        // set maximize
+        setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
+        
+        // Initialize
         initComponents();
+        
+        // Add BrowserView to jPanelMain
+        mBrowserView = new BrowserView(jPanelMain, Config.TELEMED_URL + "/member/profile");
     }
 
     /**
@@ -32,17 +43,28 @@ public class IndexLayout extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanelMain = new javax.swing.JPanel();
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Telemed");
+
+        jPanelMain.setLayout(new java.awt.BorderLayout());
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         pack();
@@ -76,6 +98,11 @@ public class IndexLayout extends javax.swing.JFrame {
         }
     }
     
+    public BrowserView getBrowserView() {
+        return mBrowserView;
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JPanel jPanelMain;
     // End of variables declaration//GEN-END:variables
 }
