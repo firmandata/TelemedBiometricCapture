@@ -31,7 +31,7 @@ public class IndexLayout extends javax.swing.JFrame {
         initComponents();
         
         // Add BrowserView to jPanelMain
-        mBrowserView = new BrowserView(jPanelMain, Config.TELEMED_URL + "/member/profile");
+        mBrowserView = new BrowserView(jPanelMain, Config.TELEMED_URL);
     }
 
     /**
