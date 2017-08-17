@@ -9,8 +9,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 import constants.Config;
+import java.awt.Image;
+import javax.swing.ImageIcon;
 
 /**
  *
@@ -19,6 +23,7 @@ import constants.Config;
 public class IndexLayout extends javax.swing.JFrame {
 
     protected BrowserView mBrowserView;
+    protected LayoutListener mLayoutListener;
     
     /**
      * Creates new form MainFrame
@@ -32,6 +37,21 @@ public class IndexLayout extends javax.swing.JFrame {
         
         // Add BrowserView to jPanelMain
         mBrowserView = new BrowserView(jPanelMain, Config.TELEMED_URL);
+        
+        // Layout listener
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                if (mLayoutListener != null)
+                    mLayoutListener.onLayoutShown();
+            }
+
+            @Override
+            public void componentHidden(ComponentEvent e) {
+                if (mLayoutListener != null)
+                    mLayoutListener.onLayoutHidden();
+            }
+        });
     }
 
     /**
@@ -44,31 +64,55 @@ public class IndexLayout extends javax.swing.JFrame {
     private void initComponents() {
 
         jPanelMain = new javax.swing.JPanel();
+        jPanelBottom = new javax.swing.JPanel();
+        jLabelStatus = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Telemed");
 
+        jPanelMain.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.LOWERED));
         jPanelMain.setLayout(new java.awt.BorderLayout());
+
+        jLabelStatus.setText("Telemed Biometric Capture");
+
+        javax.swing.GroupLayout jPanelBottomLayout = new javax.swing.GroupLayout(jPanelBottom);
+        jPanelBottom.setLayout(jPanelBottomLayout);
+        jPanelBottomLayout.setHorizontalGroup(
+            jPanelBottomLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelBottomLayout.createSequentialGroup()
+                .addGap(5, 5, 5)
+                .addComponent(jLabelStatus, javax.swing.GroupLayout.DEFAULT_SIZE, 683, Short.MAX_VALUE)
+                .addGap(5, 5, 5))
+        );
+        jPanelBottomLayout.setVerticalGroup(
+            jPanelBottomLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelBottomLayout.createSequentialGroup()
+                .addGap(5, 5, 5)
+                .addComponent(jLabelStatus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(5, 5, 5))
+        );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+            .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jPanelBottom, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(jPanelMain, javax.swing.GroupLayout.DEFAULT_SIZE, 493, Short.MAX_VALUE)
+                .addGap(0, 0, 0)
+                .addComponent(jPanelBottom, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+    
+    public void setLayoutListener(final LayoutListener layoutListener) {
+        mLayoutListener = layoutListener;
+    }
     
     public static IndexLayout CreateLayout() {
         LayoutCreator layoutCreator = new LayoutCreator();
@@ -102,7 +146,32 @@ public class IndexLayout extends javax.swing.JFrame {
         return mBrowserView;
     }
     
+    public void setStatus(final String status) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                jLabelStatus.setText(status);
+            }
+        });
+    }
+    
+    public void setCaptured(final Image image) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                //picture.setIcon(new ImageIcon(image.getScaledInstance(picture.getWidth(), picture.getHeight(), Image.SCALE_DEFAULT)));
+            }
+        });
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel jLabelStatus;
+    private javax.swing.JPanel jPanelBottom;
     private javax.swing.JPanel jPanelMain;
     // End of variables declaration//GEN-END:variables
+
+    public interface LayoutListener {
+        void onLayoutShown();
+        void onLayoutHidden();
+    }
 }
