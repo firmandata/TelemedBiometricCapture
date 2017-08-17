@@ -11,10 +11,10 @@ import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.Image;
 
 import constants.Config;
-import java.awt.Image;
-import javax.swing.ImageIcon;
+import helpers.ImageHelper;
 
 /**
  *
@@ -159,7 +159,9 @@ public class IndexLayout extends javax.swing.JFrame {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                //picture.setIcon(new ImageIcon(image.getScaledInstance(picture.getWidth(), picture.getHeight(), Image.SCALE_DEFAULT)));
+                String imageString = ImageHelper.jpegToBase64(image); 
+                if (imageString != null && mBrowserView != null)
+                    mBrowserView.executeScript("app_finger_captured(\"" + imageString + "\", \"JPEG\")");
             }
         });
     }
