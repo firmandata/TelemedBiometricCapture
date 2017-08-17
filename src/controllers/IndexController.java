@@ -21,10 +21,30 @@ public class IndexController {
     
     protected IndexLayout mIndexView;
     protected DPFPCapture mDPFPCapture;
+    protected JavaScriptController mJavaScriptController;
+    
+    protected Boolean mIsCaptureRunning;
     
     public IndexController() {
         mIndexView = null;
         mDPFPCapture = DPFPGlobal.getCaptureFactory().createCapture();
+        
+        mJavaScriptController = new JavaScriptController(new JavaScriptController.JavaScriptListener() {
+            @Override
+            public void onStartCapture() {
+                startCapture();
+            }
+
+            @Override
+            public void onStopCapture() {
+                stopCapture();
+            }
+
+            @Override
+            public boolean isStartedCapture() {
+                return mDPFPCapture.isStarted();
+            }
+        });
     }
     
     public void showLayout() {
@@ -36,6 +56,7 @@ public class IndexController {
     
     protected void initLayout() {
         mIndexView = IndexLayout.CreateLayout();
+        mIndexView.setJavaScriptController(mJavaScriptController);
         mIndexView.setLayoutListener(new IndexLayout.LayoutListener() {
             @Override
             public void onLayoutShown() {
@@ -119,13 +140,15 @@ public class IndexController {
     }
     
     protected void startCapture() {
-        mDPFPCapture.startCapture();
+        if (!mDPFPCapture.isStarted())
+            mDPFPCapture.startCapture();
         
         mIndexView.setStatus("Fingerprint reader is ready start.");
     }
     
     protected void stopCapture() {
-        mDPFPCapture.stopCapture();
+        if (mDPFPCapture.isStarted())
+            mDPFPCapture.stopCapture();
         
         mIndexView.setStatus("Fingerprint reader is stopped.");
     }

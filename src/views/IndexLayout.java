@@ -14,7 +14,9 @@ import java.awt.event.ComponentEvent;
 import java.awt.Image;
 
 import constants.Config;
+import controllers.JavaScriptController;
 import helpers.ImageHelper;
+import netscape.javascript.JSObject;
 
 /**
  *
@@ -23,6 +25,7 @@ import helpers.ImageHelper;
 public class IndexLayout extends javax.swing.JFrame {
 
     protected BrowserView mBrowserView;
+    protected JavaScriptController mJavaScriptController;
     protected LayoutListener mLayoutListener;
     
     /**
@@ -35,8 +38,8 @@ public class IndexLayout extends javax.swing.JFrame {
         // Initialize
         initComponents();
         
-        // Add BrowserView to jPanelMain
-        mBrowserView = new BrowserView(jPanelMain, Config.TELEMED_URL);
+        // Initialize and add BrowserView to jPanelMain
+        initWebView();
         
         // Layout listener
         addComponentListener(new ComponentAdapter() {
@@ -109,6 +112,55 @@ public class IndexLayout extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+    
+    protected void initWebView() {
+        mBrowserView = new BrowserView(jPanelMain, Config.TELEMED_URL);
+        mBrowserView.setPageStateListener(new BrowserView.PageStateListener() {
+            @Override
+            public void onPageStateReady(String url) {
+                
+            }
+
+            @Override
+            public void onPageStateScheduled(String url) {
+                
+            }
+
+            @Override
+            public void onPageStateRunning(String url) {
+                
+            }
+
+            @Override
+            public void onPageStateSucceeded(String url) {
+                mBrowserView.executeScript("window", new BrowserView.ExecuteScriptListener() {
+                    @Override
+                    public void onExecutedScript(Object result) {
+                        // Attach app variable to page
+                        JSObject jsObject = (JSObject) result;
+                        jsObject.setMember("app", mJavaScriptController);
+                        
+                        // Send ready flag to app_ready() function
+                        mBrowserView.executeScript("app_ready()");
+                    }
+                });
+            }
+
+            @Override
+            public void onPageStateCancelled(String url) {
+                
+            }
+
+            @Override
+            public void onPageStateFailed(String url) {
+                
+            }
+        });
+    }
+    
+    public void setJavaScriptController(final JavaScriptController javaScriptController) {
+        mJavaScriptController = javaScriptController;
+    }
     
     public void setLayoutListener(final LayoutListener layoutListener) {
         mLayoutListener = layoutListener;
