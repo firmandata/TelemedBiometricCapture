@@ -12,6 +12,7 @@ import com.digitalpersona.onetouch.capture.event.DPFPReaderStatusAdapter;
 import com.digitalpersona.onetouch.capture.event.DPFPReaderStatusEvent;
 import com.digitalpersona.onetouch.capture.event.DPFPSensorAdapter;
 import com.digitalpersona.onetouch.capture.event.DPFPSensorEvent;
+import helpers.ImageHelper;
 import java.awt.Image;
 import javax.swing.SwingUtilities;
 
@@ -23,7 +24,7 @@ public class IndexController {
     protected DPFPCapture mDPFPCapture;
     protected JavaScriptController mJavaScriptController;
     
-    protected Boolean mIsCaptureRunning;
+    protected DPFPSample mDPFPSample;
     
     public IndexController() {
         mIndexView = null;
@@ -31,18 +32,39 @@ public class IndexController {
         
         mJavaScriptController = new JavaScriptController(new JavaScriptController.JavaScriptListener() {
             @Override
-            public void onStartCapture() {
-                startCapture();
+            public void onRequestFingerCaptureStatus() {
+                mIndexView.setResponseFingerCaptureStatus(mDPFPCapture.isStarted());
             }
 
             @Override
-            public void onStopCapture() {
-                stopCapture();
+            public void onRequestFingerCaptureStart() {
+                boolean isStarted = startCapture();
+                mIndexView.setResponseFingerCaptureStart(isStarted);
             }
 
             @Override
-            public boolean isStartedCapture() {
-                return mDPFPCapture.isStarted();
+            public void onRequestFingerCaptureStop() {
+                boolean isStopped = stopCapture();
+                mIndexView.setResponseFingerCaptureStop(isStopped);
+            }
+
+            @Override
+            public void onRequestFingerImage() {
+                if (mDPFPSample != null) {
+                    mIndexView.setResponseFingerImageBase64(toBitmap(mDPFPSample));
+                } else {
+                    mIndexView.setResponseFingerImageBase64(null);
+                }
+            }
+
+            @Override
+            public void onRequestTemplate(String[] imagesBase64) {
+                mIndexView.setResponseTemplateBase64(null);
+            }
+
+            @Override
+            public void onRequestIdentify(String templateBase64) {
+                mIndexView.setResponseIdentify(null);
             }
         });
     }
@@ -139,22 +161,27 @@ public class IndexController {
         });
     }
     
-    protected void startCapture() {
+    protected boolean startCapture() {
         if (!mDPFPCapture.isStarted())
             mDPFPCapture.startCapture();
         
         mIndexView.setStatus("Fingerprint reader is ready start.");
+        
+        return true;
     }
     
-    protected void stopCapture() {
+    protected boolean stopCapture() {
         if (mDPFPCapture.isStarted())
             mDPFPCapture.stopCapture();
         
         mIndexView.setStatus("Fingerprint reader is stopped.");
+        
+        return true;
     }
     
     protected void processCapture(DPFPSample dpfpSample) {
-        mIndexView.setCaptured(toBitmap(dpfpSample));
+        mIndexView.setResponseFingerCaptured(toBitmap(dpfpSample));
+        mDPFPSample = dpfpSample;
     }
     
     protected Image toBitmap(DPFPSample dpfpSample) {

@@ -8,21 +8,36 @@ public class JavaScriptController {
         mJavaScriptListener = javaScriptListener;
     }
     
-    public boolean isStartedCapture() {
-        return mJavaScriptListener.isStartedCapture();
+    public void requestFingerCaptureStatus() {
+        mJavaScriptListener.onRequestFingerCaptureStatus();
     }
     
-    public void startCapture() {
-        mJavaScriptListener.onStartCapture();
+    public void requestFingerCaptureStart() {
+        mJavaScriptListener.onRequestFingerCaptureStart();
     }
     
-    public void stopCapture() {
-        mJavaScriptListener.onStopCapture();
+    public void requestFingerCaptureStop() {
+        mJavaScriptListener.onRequestFingerCaptureStop();
+    }
+    
+    public void requestFingerImage() {
+        mJavaScriptListener.onRequestFingerImage();
+    }
+    
+    public void requestTemplate(String[] imagesBase64) {
+        mJavaScriptListener.onRequestTemplate(imagesBase64);
+    }
+    
+    public void requestIdentify(String templateBase64) {
+        mJavaScriptListener.onRequestIdentify(templateBase64);
     }
     
     public interface JavaScriptListener {
-        void onStartCapture();
-        void onStopCapture();
-        boolean isStartedCapture();
+        void onRequestFingerCaptureStatus();
+        void onRequestFingerCaptureStart();
+        void onRequestFingerCaptureStop();
+        void onRequestFingerImage();
+        void onRequestTemplate(String[] imagesBase64);
+        void onRequestIdentify(String templateBase64);
     }
 }

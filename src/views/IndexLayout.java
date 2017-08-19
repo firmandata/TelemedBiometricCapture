@@ -212,13 +212,74 @@ public class IndexLayout extends javax.swing.JFrame {
         });
     }
     
-    public void setCaptured(final Image image) {
+    public void setResponseFingerCaptureStatus(final boolean isStarted) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_finger_capture_status(" + String.valueOf(isStarted) + ")");
+            }
+        });
+    }
+    
+    public void setResponseFingerCaptureStart(final boolean isStarted) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_finger_capture_start(" + String.valueOf(isStarted) + ")");
+            }
+        });
+    }
+    
+    public void setResponseFingerCaptureStop(final boolean isStopped) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_finger_capture_stop(" + String.valueOf(isStopped) + ")");
+            }
+        });
+    }
+    
+    public void setResponseFingerCaptured(final Image image) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 String imageString = ImageHelper.jpegToBase64(image); 
                 if (imageString != null && mBrowserView != null)
-                    mBrowserView.executeScript("app_finger_captured(\"" + imageString + "\", \"JPEG\")");
+                    mBrowserView.executeScript("app_response_finger_captured(\"" + imageString + "\", \"JPEG\")");
+            }
+        });
+    }
+    
+    public void setResponseFingerImageBase64(final Image image) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                String imageString = ImageHelper.jpegToBase64(image); 
+                if (imageString != null && mBrowserView != null)
+                    mBrowserView.executeScript("app_response_finger_image(\"" + imageString + "\", \"JPEG\")");
+            }
+        });
+    }
+    
+    public void setResponseTemplateBase64(final String template) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_template(\"" + template + "\")");
+            }
+        });
+    }
+    
+    public void setResponseIdentify(final String identifyResult) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_identify(\"" + identifyResult + "\")");
             }
         });
     }
