@@ -1,6 +1,7 @@
 package views;
 
 import com.sun.javafx.application.PlatformImpl;
+import helpers.SystemHelper;
 import java.awt.BorderLayout;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -15,16 +16,22 @@ import javafx.geometry.Pos;
 import javafx.scene.layout.StackPane;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.web.PopupFeatures;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 public class BrowserView {
     
     protected Stage mStage;
-    protected WebView mWebView;
     protected JFXPanel mJFXPanel;
+    
+    protected WebView mWebView;
     protected WebEngine mWebEngine;
+    
+    protected WebView mWebViewPopup;
+    protected WebEngine mWebEnginePopup;
     
     protected PageStateListener mPageStateListener;
     
@@ -39,6 +46,9 @@ public class BrowserView {
         PlatformImpl.startup(new Runnable() {
             @Override
             public void run() {
+                // ---------------
+                // Initialize view
+                // ---------------
                 mStage = new Stage();
                 mStage.setResizable(true);
                 
@@ -48,6 +58,9 @@ public class BrowserView {
                 Scene scene = new Scene(stackPane);
                 mStage.setScene(scene);
 
+                // ---------------
+                // WebEngine web page view
+                // -----------------------
                 mWebView = new WebView();
                 mWebView.setContextMenuEnabled(false);
                 
@@ -75,10 +88,42 @@ public class BrowserView {
                 });
                 mWebEngine.load(url);
 
+                // ------------
+                // Add to scene
+                // ------------
                 ObservableList<Node> children = stackPane.getChildren();
                 children.add(mWebView);
 
                 jfxPanel.setScene(scene);
+                
+                // ------------------
+                // Popup page handler
+                // ------------------
+                mWebEngine.setCreatePopupHandler(new Callback<PopupFeatures, WebEngine>() {
+                    @Override
+                    public WebEngine call(PopupFeatures popupFeatures) {
+                        return mWebEnginePopup;
+                    }
+                });
+                
+                mWebViewPopup = new WebView();
+                mWebViewPopup.setContextMenuEnabled(false);
+                
+                mWebEnginePopup = mWebViewPopup.getEngine();
+                mWebEnginePopup.setJavaScriptEnabled(false);
+                mWebEnginePopup.getLoadWorker().stateProperty().addListener(new ChangeListener<Worker.State>() {
+                    @Override
+                    public void changed(ObservableValue<? extends Worker.State> observableValue, Worker.State oldState, Worker.State newState) {
+                        if (oldState != Worker.State.CANCELLED && newState == Worker.State.SCHEDULED) {
+                            mWebEnginePopup.getLoadWorker().cancel();
+                            if (mPageStateListener != null) {
+                                String url = mWebEnginePopup.getLocation();
+                                if (url != null)
+                                    mPageStateListener.onPagePopupOpen(url);
+                            }
+                        }
+                    }
+                });
             }
         });
     }
@@ -132,6 +177,15 @@ public class BrowserView {
         }
     }
     
+    public void openDocument(final String url) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                SystemHelper.openBrowser(url);
+            }
+        });
+    }
+    
     public interface PageStateListener {
         void onPageStateReady(String url);
         void onPageStateScheduled(String url);
@@ -139,6 +193,7 @@ public class BrowserView {
         void onPageStateSucceeded(String url);
         void onPageStateCancelled(String url);
         void onPageStateFailed(String url);
+        void onPagePopupOpen(String url);
     }
     
     public interface ExecuteScriptListener {

@@ -155,6 +155,11 @@ public class IndexLayout extends javax.swing.JFrame {
             public void onPageStateFailed(String url) {
                 
             }
+
+            @Override
+            public void onPagePopupOpen(String url) {
+                mBrowserView.openDocument(url);
+            }
         });
     }
     
