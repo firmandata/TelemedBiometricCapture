@@ -18,7 +18,7 @@ import javax.swing.SwingUtilities;
 
 import views.IndexLayout;
 
-public class IndexController {
+public class IndexController implements JavaScriptController.JavaScriptListener {
     
     protected IndexLayout mIndexView;
     protected DPFPCapture mDPFPCapture;
@@ -29,44 +29,7 @@ public class IndexController {
     public IndexController() {
         mIndexView = null;
         mDPFPCapture = DPFPGlobal.getCaptureFactory().createCapture();
-        
-        mJavaScriptController = new JavaScriptController(new JavaScriptController.JavaScriptListener() {
-            @Override
-            public void onRequestFingerCaptureStatus() {
-                mIndexView.setResponseFingerCaptureStatus(mDPFPCapture.isStarted());
-            }
-
-            @Override
-            public void onRequestFingerCaptureStart() {
-                boolean isStarted = startCapture();
-                mIndexView.setResponseFingerCaptureStart(isStarted);
-            }
-
-            @Override
-            public void onRequestFingerCaptureStop() {
-                boolean isStopped = stopCapture();
-                mIndexView.setResponseFingerCaptureStop(isStopped);
-            }
-
-            @Override
-            public void onRequestFingerImage() {
-                if (mDPFPSample != null) {
-                    mIndexView.setResponseFingerImageBase64(toBitmap(mDPFPSample));
-                } else {
-                    mIndexView.setResponseFingerImageBase64(null);
-                }
-            }
-
-            @Override
-            public void onRequestTemplate(String[] imagesBase64) {
-                mIndexView.setResponseTemplateBase64(null);
-            }
-
-            @Override
-            public void onRequestIdentify(String templateBase64) {
-                mIndexView.setResponseIdentify(null);
-            }
-        });
+        mJavaScriptController = new JavaScriptController(this);
     }
     
     public void showLayout() {
@@ -186,5 +149,46 @@ public class IndexController {
     
     protected Image toBitmap(DPFPSample dpfpSample) {
         return DPFPGlobal.getSampleConversionFactory().createImage(dpfpSample);
+    }
+    
+    
+    // -----------------------------
+    // -- JAVASCRIPT COMMUNICATOR --
+    // -----------------------------
+    
+    @Override
+    public void onRequestFingerCaptureStatus() {
+        mIndexView.setResponseFingerCaptureStatus(mDPFPCapture.isStarted());
+    }
+
+    @Override
+    public void onRequestFingerCaptureStart() {
+        boolean isStarted = startCapture();
+        mIndexView.setResponseFingerCaptureStart(isStarted);
+    }
+
+    @Override
+    public void onRequestFingerCaptureStop() {
+        boolean isStopped = stopCapture();
+        mIndexView.setResponseFingerCaptureStop(isStopped);
+    }
+
+    @Override
+    public void onRequestFingerImage() {
+        if (mDPFPSample != null) {
+            mIndexView.setResponseFingerImageBase64(toBitmap(mDPFPSample));
+        } else {
+            mIndexView.setResponseFingerImageBase64(null);
+        }
+    }
+
+    @Override
+    public void onRequestTemplate(String[] imagesBase64) {
+        mIndexView.setResponseTemplateBase64(null);
+    }
+
+    @Override
+    public void onRequestIdentify(String templateBase64) {
+        mIndexView.setResponseIdentify(null);
     }
 }
