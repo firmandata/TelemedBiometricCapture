@@ -1,34 +1,27 @@
 package controllers;
 
-import com.digitalpersona.onetouch.DPFPCaptureFeedback;
-import com.digitalpersona.onetouch.DPFPGlobal;
-import com.digitalpersona.onetouch.DPFPSample;
-import com.digitalpersona.onetouch.capture.DPFPCapture;
-import com.digitalpersona.onetouch.capture.event.DPFPDataAdapter;
-import com.digitalpersona.onetouch.capture.event.DPFPDataEvent;
-import com.digitalpersona.onetouch.capture.event.DPFPImageQualityAdapter;
-import com.digitalpersona.onetouch.capture.event.DPFPImageQualityEvent;
-import com.digitalpersona.onetouch.capture.event.DPFPReaderStatusAdapter;
-import com.digitalpersona.onetouch.capture.event.DPFPReaderStatusEvent;
-import com.digitalpersona.onetouch.capture.event.DPFPSensorAdapter;
-import com.digitalpersona.onetouch.capture.event.DPFPSensorEvent;
-import helpers.ImageHelper;
+import com.neurotec.biometrics.NTemplate;
 import java.awt.Image;
-import javax.swing.SwingUtilities;
+
+import constants.Config;
+import fingerprint.device.FingerDevice;
+import fingerprint.device.IFingerDeviceEvent;
+import fingerprint.device.Neurotec;
+import org.apache.commons.codec.binary.Base64;
 
 import views.IndexLayout;
 
 public class IndexController implements JavaScriptController.JavaScriptListener {
     
     protected IndexLayout mIndexView;
-    protected DPFPCapture mDPFPCapture;
+    protected FingerDevice mFingerDevice;
     protected JavaScriptController mJavaScriptController;
     
-    protected DPFPSample mDPFPSample;
+    protected Image mImage;
     
     public IndexController() {
         mIndexView = null;
-        mDPFPCapture = DPFPGlobal.getCaptureFactory().createCapture();
+        mFingerDevice = new FingerDevice(Config.FINGER_SDK);
         mJavaScriptController = new JavaScriptController(this);
     }
     
@@ -37,6 +30,7 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
             mIndexView.dispose();
         
         initLayout();
+        initFingerDevice();
     }
     
     protected void initLayout() {
@@ -45,7 +39,6 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
         mIndexView.setLayoutListener(new IndexLayout.LayoutListener() {
             @Override
             public void onLayoutShown() {
-                initCapture();
                 startCapture();
             }
 
@@ -56,99 +49,42 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
         });
     }
     
-    protected void initCapture() {
-        mDPFPCapture.addDataListener(new DPFPDataAdapter() {
+    protected void initFingerDevice() {
+        mFingerDevice.setListener(new IFingerDeviceEvent() {
             @Override
-            public void dataAcquired(final DPFPDataEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        mIndexView.setStatus("The fingerprint was captured.");
-                        processCapture(e.getSample());
-                    }
-                });
-            }
-        });
-        
-        mDPFPCapture.addReaderStatusListener(new DPFPReaderStatusAdapter() {
-            @Override
-            public void readerConnected(final DPFPReaderStatusEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        mIndexView.setStatus("The fingerprint reader was connected.");
-                    }
-                });
+            public void onFingerDeviceConnected() {
+                mIndexView.setStatus("The fingerprint reader was connected.");
             }
 
             @Override
-            public void readerDisconnected(final DPFPReaderStatusEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        mIndexView.setStatus("The fingerprint reader was disconnected.");
-                    }
-                });
+            public void onFingerDeviceStartCapture() {
+                mIndexView.setStatus("The fingerprint reader is started listening.");
             }
-        });
-        
-        mDPFPCapture.addSensorListener(new DPFPSensorAdapter() {
+
             @Override
-            public void fingerTouched(final DPFPSensorEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        mIndexView.setStatus("The fingerprint reader was touched.");
-                    }
-                });
+            public void onFingerDeviceImageCaptured(final Image image) {
+                mIndexView.setResponseFingerCaptured(image);
+                mIndexView.setStatus("The fingerprint was captured.");
             }
-            
+
             @Override
-            public void fingerGone(final DPFPSensorEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        mIndexView.setStatus("The finger was removed from the fingerprint reader.");
-                    }
-                });
+            public void onFingerDeviceStopCapture() {
+                mIndexView.setStatus("The fingerprint reader is stopped listening.");
             }
-        });
-        
-        mDPFPCapture.addImageQualityListener(new DPFPImageQualityAdapter() {
+
             @Override
-            public void onImageQuality(final DPFPImageQualityEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        if (e.getFeedback().equals(DPFPCaptureFeedback.CAPTURE_FEEDBACK_GOOD))
-                            mIndexView.setStatus("The quality of the fingerprint is good.");
-                        else
-                            mIndexView.setStatus("The quality of the fingerprint is poor.");
-                    }
-                });
+            public void onFingerDeviceDisconnected() {
+                mIndexView.setStatus("The fingerprint reader was disconnected.");
             }
         });
     }
     
     protected boolean startCapture() {
-        if (!mDPFPCapture.isStarted())
-            mDPFPCapture.startCapture();
-        
-        mIndexView.setStatus("Fingerprint reader is ready start.");
-        
-        return true;
+        return mFingerDevice.startCapture();
     }
     
     protected boolean stopCapture() {
-        if (mDPFPCapture.isStarted())
-            mDPFPCapture.stopCapture();
-        
-        mIndexView.setStatus("Fingerprint reader is stopped.");
-        
-        return true;
-    }
-    
-    protected void processCapture(DPFPSample dpfpSample) {
-        mIndexView.setResponseFingerCaptured(toBitmap(dpfpSample));
-        mDPFPSample = dpfpSample;
-    }
-    
-    protected Image toBitmap(DPFPSample dpfpSample) {
-        return DPFPGlobal.getSampleConversionFactory().createImage(dpfpSample);
+        return mFingerDevice.stopCapture();
     }
     
     
@@ -158,7 +94,7 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
     
     @Override
     public void onRequestFingerCaptureStatus() {
-        mIndexView.setResponseFingerCaptureStatus(mDPFPCapture.isStarted());
+        mIndexView.setResponseFingerCaptureStatus(mFingerDevice.isCapturing());
     }
 
     @Override
@@ -175,20 +111,75 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
 
     @Override
     public void onRequestFingerImage() {
-        if (mDPFPSample != null) {
-            mIndexView.setResponseFingerImageBase64(toBitmap(mDPFPSample));
-        } else {
-            mIndexView.setResponseFingerImageBase64(null);
-        }
+        mIndexView.setResponseFingerImageBase64(mImage);
     }
 
     @Override
-    public void onRequestTemplate(String[] imagesBase64) {
-        mIndexView.setResponseTemplateBase64(null);
+    public void onRequestTemplate(int[] fingerIndexPositions, String[] fingerBase64Images) {
+        Neurotec neurotec = (Neurotec) mFingerDevice.getInstance();
+        neurotec.createTemplateFromImages(fingerIndexPositions, fingerBase64Images, new Neurotec.CreateTemplateListener() {
+            @Override
+            public void onTemplateCreateSuccess(NTemplate template) {
+                byte[] templateBytes = template.save().toByteArray();
+                String base64Encoded = Base64.encodeBase64String(templateBytes);
+                mIndexView.setResponseTemplateBase64(base64Encoded);
+            }
+
+            @Override
+            public void onTemplateCreateFailed(String message) {
+                mIndexView.setResponseTemplateFailed(message);
+            }
+        });
     }
 
     @Override
-    public void onRequestIdentify(String templateBase64) {
-        mIndexView.setResponseIdentify(null);
+    public void onTemplateAdd(int id, String templateBase64) {
+        Neurotec neurotec = (Neurotec) mFingerDevice.getInstance();
+        neurotec.templateAdd(id, templateBase64, new Neurotec.TemplateAddListener() {
+
+            @Override
+            public void onTemplateAddSuccess(int id) {
+                mIndexView.setResponseTemplateAdd(id);
+            }
+
+            @Override
+            public void onTemplateAddFailed(String message) {
+                mIndexView.setResponseTemplateAddFailed(message);
+            }
+        });
+    }
+
+    @Override
+    public void onTemplateDelete(int id) {
+        Neurotec neurotec = (Neurotec) mFingerDevice.getInstance();
+        neurotec.templateDelete(id, new Neurotec.TemplateDeleteListener() {
+
+            @Override
+            public void onTemplateDeleteSuccess(int id) {
+                mIndexView.setResponseTemplateDelete(id);
+            }
+
+            @Override
+            public void onTemplateDeleteFailed(String message) {
+                mIndexView.setResponseTemplateDeleteFailed(message);
+            }
+        });
+    }
+
+    @Override
+    public void onTemplateIdentify(String templateBase64) {
+        Neurotec neurotec = (Neurotec) mFingerDevice.getInstance();
+        neurotec.templateIdentify(templateBase64, new Neurotec.TemplateIdentifyListener() {
+
+            @Override
+            public void onTemplateIdentifySuccess(Neurotec.TemplateIdentifyResult[] templateIdentifyResults) {
+                mIndexView.setResponseTemplateIdentify(templateIdentifyResults);
+            }
+
+            @Override
+            public void onTemplateIdentifyFailed(String message) {
+                mIndexView.setResponseTemplateIdentifyFailed(message);
+            }
+        });
     }
 }

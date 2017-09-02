@@ -15,8 +15,12 @@ import java.awt.Image;
 
 import constants.Config;
 import controllers.JavaScriptController;
+import fingerprint.device.Neurotec;
 import helpers.ImageHelper;
 import netscape.javascript.JSObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  *
@@ -274,15 +278,91 @@ public class IndexLayout extends javax.swing.JFrame {
         });
     }
     
-    public void setResponseIdentify(final String identifyResult) {
+    public void setResponseTemplateFailed(final String message) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 if (mBrowserView != null)
-                    mBrowserView.executeScript("app_response_identify(\"" + identifyResult + "\")");
+                    mBrowserView.executeScript("app_response_template_failed(\"" + message + "\")");
             }
         });
     }
+    
+    public void setResponseTemplateAdd(final int id) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_template_add(" + String.valueOf(id) + ")");
+            }
+        });
+    }
+    
+    public void setResponseTemplateAddFailed(final String message) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_template_add_failed(\"" + message + "\")");
+            }
+        });
+    }
+    
+    public void setResponseTemplateDelete(final int id) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_template_delete(" + String.valueOf(id) + ")");
+            }
+        });
+    }
+    
+    public void setResponseTemplateDeleteFailed(final String message) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_template_delete_failed(\"" + message + "\")");
+            }
+        });
+    }
+    
+    public void setResponseTemplateIdentify(final Neurotec.TemplateIdentifyResult[] templateIdentifyResults) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                String identifyResult = "";
+                if (templateIdentifyResults != null) {
+                    try {
+                        JSONArray jsonArray = new JSONArray();
+                        for (Neurotec.TemplateIdentifyResult templateIdentifyResult : templateIdentifyResults) {
+                            JSONObject jsonObject = new JSONObject();
+                            jsonObject.put("id", templateIdentifyResult.getId());
+                            jsonObject.put("score", templateIdentifyResult.getScore());
+                            jsonArray.put(jsonObject);
+                        }
+                        identifyResult = jsonArray.toString();
+                    } catch (JSONException ex) {
+                        
+                    }
+                }
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_template_identify('" + identifyResult + "')");
+            }
+        });
+    }
+    
+    public void setResponseTemplateIdentifyFailed(final String message) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_template_identify_failed(\"" + message + "\")");
+            }
+        });
+    }
+    
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabelStatus;

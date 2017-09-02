@@ -3,6 +3,7 @@ package helpers;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -58,5 +59,29 @@ public class ImageHelper {
 
         // Return the buffered image
         return bufferedImage;
+    }
+    
+    public static BufferedImage base64ToImage(String imageString) {
+        BufferedImage bufferedImage = null;
+        
+        try {
+            byte[] imageByte = Base64.decodeBase64(imageString);
+            
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(imageByte);
+            bufferedImage = ImageIO.read(byteArrayInputStream);
+            byteArrayInputStream.close();
+        } catch (Exception ex) {
+            Logger.getLogger(ImageHelper.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return bufferedImage;
+    }
+    
+    public static byte[] base64ToBytes(String imageString) {
+        return Base64.decodeBase64(imageString);
+    }
+    
+    public static Image bufferedImageToImage(final BufferedImage bufferedImage) {
+        return (Image) bufferedImage;
     }
 }
