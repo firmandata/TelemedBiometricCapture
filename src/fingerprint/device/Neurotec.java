@@ -147,7 +147,7 @@ public class Neurotec implements IFingerDevice {
             subject.setTemplate(template);
             subject.setId(String.valueOf(id));
             
-            NBiometricTask biometricTask = new NBiometricTask(EnumSet.of(NBiometricOperation.ENROLL));
+            NBiometricTask biometricTask = new NBiometricTask(EnumSet.of(NBiometricOperation.ENROLL_WITH_DUPLICATE_CHECK));
             biometricTask.getSubjects().add(subject);
             
             TemplateAddHandler templateAddHandler = new TemplateAddHandler(id);
@@ -264,6 +264,7 @@ public class Neurotec implements IFingerDevice {
             super();
             
             mId = id;
+            mTemplateAddListener = null;
         }
         
         public void setTemplateAddListener(final TemplateAddListener templateAddListener) {
@@ -273,7 +274,7 @@ public class Neurotec implements IFingerDevice {
 		@Override
 		public void completed(final NBiometricTask task, final Object attachment) {
 			if (task.getStatus() == NBiometricStatus.OK) {
-				if (mTemplateAddListener != null)
+                if (mTemplateAddListener != null)
                     mTemplateAddListener.onTemplateAddSuccess(mId);
 			} else {
 				if (mTemplateAddListener != null)
