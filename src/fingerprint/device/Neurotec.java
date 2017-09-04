@@ -1,6 +1,5 @@
 package fingerprint.device;
 
-import com.neurotec.biometrics.NBiometricConnection;
 import com.neurotec.biometrics.NBiometricOperation;
 import com.neurotec.biometrics.NBiometricStatus;
 import com.neurotec.biometrics.NBiometricTask;
@@ -15,14 +14,14 @@ import com.neurotec.devices.NDeviceType;
 import com.neurotec.images.NImage;
 import com.neurotec.io.NBuffer;
 import com.neurotec.util.concurrent.CompletionHandler;
+
 import helpers.ImageHelper;
 import helpers.Utils;
-import java.util.ArrayList;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
+
 import org.apache.commons.codec.binary.Base64;
 
 public class Neurotec implements IFingerDevice {
@@ -107,6 +106,7 @@ public class Neurotec implements IFingerDevice {
         return isStop;
     }
 
+    @Override
     public void createTemplateFromImages(final int[] fingerIndexPositions, final String[] fingerBase64Images, final CreateTemplateListener createTemplateListener) {
         NSubject subject = new NSubject();
         
@@ -137,6 +137,7 @@ public class Neurotec implements IFingerDevice {
         }
     }
     
+    @Override
     public void templateAdd(final int id, final String templateBase64, final TemplateAddListener templateAddListener) {
         try {
             byte[] templateBytes = Base64.decodeBase64(templateBase64);
@@ -160,6 +161,7 @@ public class Neurotec implements IFingerDevice {
         }
     }
     
+    @Override
     public void templateDelete(final int id, final TemplateDeleteListener templateDeleteListener) {
         try {
             NSubject subject = new NSubject();
@@ -178,6 +180,7 @@ public class Neurotec implements IFingerDevice {
         }
     }
     
+    @Override
     public void templateIdentify(final String templateBase64, final TemplateIdentifyListener templateIdentifyListener) {
         try {
             byte[] templateBytes = Base64.decodeBase64(templateBase64);
@@ -237,8 +240,11 @@ public class Neurotec implements IFingerDevice {
 		@Override
 		public void completed(final NBiometricStatus result, final Object attachment) {
             if (result == NBiometricStatus.OK) {
-                if (mCreateTemplateListener != null)
-                    mCreateTemplateListener.onTemplateCreateSuccess(mSubject.getTemplate());
+                if (mCreateTemplateListener != null) {
+                    byte[] templateBytes = mSubject.getTemplate().save().toByteArray();
+                    String base64Encoded = Base64.encodeBase64String(templateBytes);
+                    mCreateTemplateListener.onTemplateCreateSuccess(base64Encoded);
+                }
             } else if (result == NBiometricStatus.BAD_OBJECT) {
                 if (mCreateTemplateListener != null)
                     mCreateTemplateListener.onTemplateCreateFailed("Finger image quality is too low.");
@@ -369,7 +375,7 @@ public class Neurotec implements IFingerDevice {
 	}
     
     public interface CreateTemplateListener {
-        void onTemplateCreateSuccess(NTemplate template);
+        void onTemplateCreateSuccess(String templateBase64);
         void onTemplateCreateFailed(String message);
     }
     

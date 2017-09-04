@@ -1,13 +1,11 @@
 package controllers;
 
-import com.neurotec.biometrics.NTemplate;
 import java.awt.Image;
 
 import constants.Config;
 import fingerprint.device.FingerDevice;
 import fingerprint.device.IFingerDeviceEvent;
 import fingerprint.device.Neurotec;
-import org.apache.commons.codec.binary.Base64;
 
 import views.IndexLayout;
 
@@ -116,13 +114,10 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
 
     @Override
     public void onRequestTemplate(int[] fingerIndexPositions, String[] fingerBase64Images) {
-        Neurotec neurotec = (Neurotec) mFingerDevice.getInstance();
-        neurotec.createTemplateFromImages(fingerIndexPositions, fingerBase64Images, new Neurotec.CreateTemplateListener() {
+        mFingerDevice.createTemplateFromImages(fingerIndexPositions, fingerBase64Images, new Neurotec.CreateTemplateListener() {
             @Override
-            public void onTemplateCreateSuccess(NTemplate template) {
-                byte[] templateBytes = template.save().toByteArray();
-                String base64Encoded = Base64.encodeBase64String(templateBytes);
-                mIndexView.setResponseTemplateBase64(base64Encoded);
+            public void onTemplateCreateSuccess(String templateBase64) {
+                mIndexView.setResponseTemplateBase64(templateBase64);
             }
 
             @Override
@@ -134,8 +129,7 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
 
     @Override
     public void onTemplateAdd(int id, String templateBase64) {
-        Neurotec neurotec = (Neurotec) mFingerDevice.getInstance();
-        neurotec.templateAdd(id, templateBase64, new Neurotec.TemplateAddListener() {
+        mFingerDevice.templateAdd(id, templateBase64, new Neurotec.TemplateAddListener() {
 
             @Override
             public void onTemplateAddSuccess(int id) {
@@ -151,8 +145,7 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
 
     @Override
     public void onTemplateDelete(int id) {
-        Neurotec neurotec = (Neurotec) mFingerDevice.getInstance();
-        neurotec.templateDelete(id, new Neurotec.TemplateDeleteListener() {
+        mFingerDevice.templateDelete(id, new Neurotec.TemplateDeleteListener() {
 
             @Override
             public void onTemplateDeleteSuccess(int id) {
@@ -168,8 +161,7 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
 
     @Override
     public void onTemplateIdentify(String templateBase64) {
-        Neurotec neurotec = (Neurotec) mFingerDevice.getInstance();
-        neurotec.templateIdentify(templateBase64, new Neurotec.TemplateIdentifyListener() {
+        mFingerDevice.templateIdentify(templateBase64, new Neurotec.TemplateIdentifyListener() {
 
             @Override
             public void onTemplateIdentifySuccess(Neurotec.TemplateIdentifyResult[] templateIdentifyResults) {
