@@ -4,19 +4,23 @@ import constants.Constant;
 
 public class FingerDevice implements IFingerDevice {
 
+    protected int mFingerSDK;
     protected IFingerDevice mFingerDevice;
     protected boolean mCapturing;
     
     public FingerDevice(final int fingerSDK) {
-        if (fingerSDK == Constant.FINGER_SDK_NEUROTEC) {
+        mFingerSDK = fingerSDK;
+        if (mFingerSDK == Constant.FINGER_SDK_NEUROTEC) {
             mFingerDevice = new Neurotec();
         } else {
             mFingerDevice = new OneTouch();
         }
     }
     
-    public IFingerDevice getInstance() {
-        return mFingerDevice;
+    public void setNeurotecService(final String host, final int port) {
+        if (mFingerSDK == Constant.FINGER_SDK_DIGITAL_PERSONA_ONE_TOUCH) {
+            ((OneTouch) mFingerDevice).setNeurotecService(host, port);
+        }
     }
     
     @Override

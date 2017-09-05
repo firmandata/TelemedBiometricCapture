@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.JSONArray;
@@ -24,9 +26,8 @@ public class OneTouch implements IFingerDevice {
     protected DPFPCapture mDPFPCapture;
     protected IFingerDeviceEvent mFingerDeviceEvent;
     
-    protected Socket mSocket;
-    protected BufferedReader mSocketIn;
-    protected PrintWriter mSocketOut;
+    protected String mNeurotecServiceHost;
+    protected int mNeurotecServicePort;
     
     public OneTouch() {
         mDPFPCapture = DPFPGlobal.getCaptureFactory().createCapture();
@@ -55,6 +56,11 @@ public class OneTouch implements IFingerDevice {
                     mFingerDeviceEvent.onFingerDeviceDisconnected();
             }
         });
+    }
+    
+    public void setNeurotecService(final String host, final int port) {
+        mNeurotecServiceHost = host;
+        mNeurotecServicePort = port;
     }
     
     @Override
@@ -106,11 +112,14 @@ public class OneTouch implements IFingerDevice {
     @Override
     public void createTemplateFromImages(int[] fingerIndexPositions, String[] fingerBase64Images, Neurotec.CreateTemplateListener createTemplateListener) {
         Socket socket = null;
+        PrintWriter socketOut = null;
+        BufferedReader socketIn = null;
+        
         try {
             // -- Create socket --
-            socket = new Socket("127.0.0.1", 9050);
-            PrintWriter socketOut = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader socketIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            socket = new Socket(mNeurotecServiceHost, mNeurotecServicePort);
+            socketOut = new PrintWriter(socket.getOutputStream(), true);
+            socketIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             
             // -- Send message --
             String sendJsonMessage = null;
@@ -137,11 +146,9 @@ public class OneTouch implements IFingerDevice {
             }
             
             socketOut.println(sendJsonMessage);
-            socketOut.close();
             
             // -- Receive message --
             String receiveJsonMessage = socketIn.readLine();
-            socketIn.close();
             
             String commandId = null;
             boolean status = false;
@@ -150,12 +157,16 @@ public class OneTouch implements IFingerDevice {
             
             try {
                 JSONObject JSONObjectReceive = new JSONObject(receiveJsonMessage);
-                commandId = JSONObjectReceive.getString("commandId");
-                status = JSONObjectReceive.getBoolean("status");
-                message = JSONObjectReceive.getString("message");
-                templateBase64 = JSONObjectReceive.getString("data");
+                if (JSONObjectReceive.has("commandId"))
+                    commandId = JSONObjectReceive.getString("commandId");
+                if (JSONObjectReceive.has("status"))
+                    status = JSONObjectReceive.getBoolean("status");
+                if (JSONObjectReceive.has("message"))
+                    message = JSONObjectReceive.getString("message");
+                if (JSONObjectReceive.has("data"))
+                    templateBase64 = JSONObjectReceive.getString("data");
             } catch (JSONException ex) {
-                
+                message = ex.getMessage();
             }
             
             if (createTemplateListener != null) {
@@ -165,15 +176,22 @@ public class OneTouch implements IFingerDevice {
                     createTemplateListener.onTemplateCreateFailed(message);
             }
             
+            // -- Send close message --
+            socketOut.println("SOCKET_CLOSE");
+            
         } catch (IOException ex) {
-            Logger.getLogger(OneTouch.class.getName()).log(Level.SEVERE, null, ex);
+            if (createTemplateListener != null)
+                createTemplateListener.onTemplateCreateFailed(ex.getMessage());
         } finally {
-            if (socket != null) {
-                try {
-                    // -- Close socket --
+            // -- Close socket --
+            try {
+                if (socketOut != null)
+                    socketOut.close();
+                if (socketIn != null)
+                    socketIn.close();
+                if (socket != null)
                     socket.close();
-                } catch (IOException ex) {
-                }
+            } catch (IOException ex) {
             }
         }
     }
@@ -181,11 +199,14 @@ public class OneTouch implements IFingerDevice {
     @Override
     public void templateAdd(int id, String templateBase64, Neurotec.TemplateAddListener templateAddListener) {
         Socket socket = null;
+        PrintWriter socketOut = null;
+        BufferedReader socketIn = null;
+        
         try {
             // -- Create socket --
-            socket = new Socket("127.0.0.1", 9050);
-            PrintWriter socketOut = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader socketIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            socket = new Socket(mNeurotecServiceHost, mNeurotecServicePort);
+            socketOut = new PrintWriter(socket.getOutputStream(), true);
+            socketIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             
             // -- Send message --
             String sendJsonMessage = null;
@@ -206,11 +227,9 @@ public class OneTouch implements IFingerDevice {
             }
             
             socketOut.println(sendJsonMessage);
-            socketOut.close();
             
             // -- Receive message --
             String receiveJsonMessage = socketIn.readLine();
-            socketIn.close();
             
             String commandId = null;
             boolean status = false;
@@ -219,41 +238,215 @@ public class OneTouch implements IFingerDevice {
             
             try {
                 JSONObject JSONObjectReceive = new JSONObject(receiveJsonMessage);
-                commandId = JSONObjectReceive.getString("commandId");
-                status = JSONObjectReceive.getBoolean("status");
-                message = JSONObjectReceive.getString("message");
-                resultId = JSONObjectReceive.getInt("data");
+                if (JSONObjectReceive.has("commandId"))
+                    commandId = JSONObjectReceive.getString("commandId");
+                if (JSONObjectReceive.has("status"))
+                    status = JSONObjectReceive.getBoolean("status");
+                if (JSONObjectReceive.has("message"))
+                    message = JSONObjectReceive.getString("message");
+                if (JSONObjectReceive.has("data"))
+                    resultId = JSONObjectReceive.getInt("data");
             } catch (JSONException ex) {
-                
+                message = ex.getMessage();
             }
             
             if (templateAddListener != null) {
                 if (status)
                     templateAddListener.onTemplateAddSuccess(resultId);
                 else
-                    templateAddListener.onTemplateAddFailed(message);;
+                    templateAddListener.onTemplateAddFailed(message);
             }
             
+            // -- Send close message --
+            socketOut.println("SOCKET_CLOSE");
+            
         } catch (IOException ex) {
-            Logger.getLogger(OneTouch.class.getName()).log(Level.SEVERE, null, ex);
+            if (templateAddListener != null)
+                templateAddListener.onTemplateAddFailed(ex.getMessage());
         } finally {
-            if (socket != null) {
-                try {
-                    // -- Close socket --
+            // -- Close socket --
+            try {
+                if (socketOut != null)
+                    socketOut.close();
+                if (socketIn != null)
+                    socketIn.close();
+                if (socket != null)
                     socket.close();
-                } catch (IOException ex) {
-                }
+            } catch (IOException ex) {
             }
         }
     }
 
     @Override
     public void templateDelete(int id, Neurotec.TemplateDeleteListener templateDeleteListener) {
+        Socket socket = null;
+        PrintWriter socketOut = null;
+        BufferedReader socketIn = null;
         
+        try {
+            // -- Create socket --
+            socket = new Socket(mNeurotecServiceHost, mNeurotecServicePort);
+            socketOut = new PrintWriter(socket.getOutputStream(), true);
+            socketIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            
+            // -- Send message --
+            String sendJsonMessage = null;
+            
+            try {
+                JSONObject JSONObjectSend = new JSONObject();
+                JSONObjectSend.put("type", "templateDelete");
+                JSONObjectSend.put("commandId", String.valueOf(1));
+                
+                JSONObject JSONObjectCommand = new JSONObject();
+                JSONObjectCommand.put("id", id);
+                
+                JSONObjectSend.put("command", JSONObjectCommand);
+                
+                sendJsonMessage = JSONObjectSend.toString();
+            } catch (JSONException ex) {
+            }
+            
+            socketOut.println(sendJsonMessage);
+            
+            // -- Receive message --
+            String receiveJsonMessage = socketIn.readLine();
+            
+            String commandId = null;
+            boolean status = false;
+            String message = null;
+            int resultId = 0;
+            
+            try {
+                JSONObject JSONObjectReceive = new JSONObject(receiveJsonMessage);
+                if (JSONObjectReceive.has("commandId"))
+                    commandId = JSONObjectReceive.getString("commandId");
+                if (JSONObjectReceive.has("status"))
+                    status = JSONObjectReceive.getBoolean("status");
+                if (JSONObjectReceive.has("message"))
+                    message = JSONObjectReceive.getString("message");
+                if (JSONObjectReceive.has("data"))
+                    resultId = JSONObjectReceive.getInt("data");
+            } catch (JSONException ex) {
+                message = ex.getMessage();
+            }
+            
+            if (templateDeleteListener != null) {
+                if (status)
+                    templateDeleteListener.onTemplateDeleteSuccess(resultId);
+                else
+                    templateDeleteListener.onTemplateDeleteFailed(message);
+            }
+            
+            // -- Send close message --
+            socketOut.println("SOCKET_CLOSE");
+            
+        } catch (IOException ex) {
+            if (templateDeleteListener != null)
+                templateDeleteListener.onTemplateDeleteFailed(ex.getMessage());
+        } finally {
+            // -- Close socket --
+            try {
+                if (socketOut != null)
+                    socketOut.close();
+                if (socketIn != null)
+                    socketIn.close();
+                if (socket != null)
+                    socket.close();
+            } catch (IOException ex) {
+            }
+        }
     }
 
     @Override
     public void templateIdentify(String templateBase64, Neurotec.TemplateIdentifyListener templateIdentifyListener) {
+        Socket socket = null;
+        PrintWriter socketOut = null;
+        BufferedReader socketIn = null;
         
+        try {
+            // -- Create socket --
+            socket = new Socket(mNeurotecServiceHost, mNeurotecServicePort);
+            socketOut = new PrintWriter(socket.getOutputStream(), true);
+            socketIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            
+            // -- Send message --
+            String sendJsonMessage = null;
+            
+            try {
+                JSONObject JSONObjectSend = new JSONObject();
+                JSONObjectSend.put("type", "templateIdentify");
+                JSONObjectSend.put("commandId", String.valueOf(1));
+                
+                JSONObject JSONObjectCommand = new JSONObject();
+                JSONObjectCommand.put("templateBase64", templateBase64);
+                
+                JSONObjectSend.put("command", JSONObjectCommand);
+                
+                sendJsonMessage = JSONObjectSend.toString();
+            } catch (JSONException ex) {
+            }
+            
+            socketOut.println(sendJsonMessage);
+            
+            // -- Receive message --
+            String receiveJsonMessage = socketIn.readLine();
+            
+            String commandId = null;
+            boolean status = false;
+            String message = null;
+            Neurotec.TemplateIdentifyResult[] templateIdentifyResults = new Neurotec.TemplateIdentifyResult[] { };
+            
+            try {
+                JSONObject JSONObjectReceive = new JSONObject(receiveJsonMessage);
+                if (JSONObjectReceive.has("commandId"))
+                    commandId = JSONObjectReceive.getString("commandId");
+                if (JSONObjectReceive.has("status"))
+                    status = JSONObjectReceive.getBoolean("status");
+                if (JSONObjectReceive.has("message"))
+                    message = JSONObjectReceive.getString("message");
+                if (JSONObjectReceive.has("data")) {
+                    List<Neurotec.TemplateIdentifyResult> templateIdentifyResultList = new ArrayList<Neurotec.TemplateIdentifyResult>();
+                    JSONArray JSONArrayResults = JSONObjectReceive.getJSONArray("data");
+                    for (int JSONArrayResultIdx = 0; JSONArrayResultIdx < JSONArrayResults.length(); JSONArrayResultIdx++) {
+                        JSONObject JSONObjectResult = JSONArrayResults.getJSONObject(JSONArrayResultIdx);
+                        Neurotec.TemplateIdentifyResult templateIdentifyResult = new Neurotec.TemplateIdentifyResult();
+                        if (JSONObjectResult.has("id"))
+                            templateIdentifyResult.setId(JSONObjectResult.getInt("id"));
+                        if (JSONObjectResult.has("score"))
+                            templateIdentifyResult.setScore(JSONObjectResult.getInt("score"));
+                        templateIdentifyResultList.add(templateIdentifyResult);
+                    }
+                    templateIdentifyResults = new Neurotec.TemplateIdentifyResult[templateIdentifyResultList.size()];
+                    templateIdentifyResultList.toArray(templateIdentifyResults);
+                }
+            } catch (JSONException ex) {
+                message = ex.getMessage();
+            }
+            
+            if (templateIdentifyListener != null) {
+                if (status)
+                    templateIdentifyListener.onTemplateIdentifySuccess(templateIdentifyResults);
+                else
+                    templateIdentifyListener.onTemplateIdentifyFailed(message);
+            }
+            
+            // -- Send close message --
+            socketOut.println("SOCKET_CLOSE");
+            
+        } catch (IOException ex) {
+            if (templateIdentifyListener != null)
+                templateIdentifyListener.onTemplateIdentifyFailed(ex.getMessage());
+        } finally {
+            // -- Close socket --
+            try {
+                if (socketOut != null)
+                    socketOut.close();
+                if (socketIn != null)
+                    socketIn.close();
+                if (socket != null)
+                    socket.close();
+            } catch (IOException ex) {
+            }
+        }
     }
 }

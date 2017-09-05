@@ -1,5 +1,7 @@
 package controllers;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -54,7 +56,7 @@ public class JavaScriptController {
             
             mJavaScriptListener.onRequestTemplate(fingerIndexPositions, fingerBase64Images);
         } catch (JSONException ex) {
-            
+            Logger.getLogger(JavaScriptController.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     

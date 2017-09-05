@@ -3,6 +3,7 @@ package controllers;
 import java.awt.Image;
 
 import constants.Config;
+import constants.Constant;
 import fingerprint.device.FingerDevice;
 import fingerprint.device.IFingerDeviceEvent;
 import fingerprint.device.Neurotec;
@@ -20,6 +21,8 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
     public IndexController() {
         mIndexView = null;
         mFingerDevice = new FingerDevice(Config.FINGER_SDK);
+        if (Config.FINGER_SDK == Constant.FINGER_SDK_DIGITAL_PERSONA_ONE_TOUCH)
+            mFingerDevice.setNeurotecService(Config.NEUROTECT_SERVICE_HOST, Config.NEUROTECT_SERVICE_PORT);
         mJavaScriptController = new JavaScriptController(this);
     }
     
