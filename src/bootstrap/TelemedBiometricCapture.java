@@ -5,9 +5,12 @@ import constants.Constant;
 import helpers.LibraryManager;
 import helpers.FingersTools;
 import controllers.IndexController;
+import controllers.NeurotecServiceController;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TelemedBiometricCapture {
     
@@ -21,7 +24,6 @@ public class TelemedBiometricCapture {
             requiredLicenses.add("Biometrics.FingerExtraction");
             requiredLicenses.add("Devices.FingerScanners");
 
-
             try {
                 isLicensed = FingersTools.getInstance().obtainLicenses(requiredLicenses);
             } catch (IOException ex) {
@@ -32,8 +34,14 @@ public class TelemedBiometricCapture {
         }        
         
         if (isLicensed) {
-            IndexController indexController = new IndexController();
-            indexController.showLayout();
+//            IndexController indexController = new IndexController();
+//            indexController.showLayout();
+            try {
+                NeurotecServiceController neurotectServiceController = new NeurotecServiceController();
+                neurotectServiceController.start(9050);
+            } catch (IOException ex) {
+                Logger.getLogger(NeurotecServiceController.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
     

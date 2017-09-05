@@ -18,11 +18,7 @@ import org.json.JSONObject;
 public class NeurotecServiceController {
     
     public NeurotecServiceController() {
-        try {
-            start(9050);
-        } catch (IOException ex) {
-            Logger.getLogger(NeurotecServiceController.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        
     }
     
     public void start(final int port) throws IOException {
@@ -30,6 +26,7 @@ public class NeurotecServiceController {
         ServerSocket serverSocket = new ServerSocket(port);
 
         try {
+            System.out.println("Starting on port" + String.valueOf(port));
             while (true) {
                 new Handler(serverSocket.accept(), neurotec).start();
             }
@@ -124,7 +121,8 @@ public class NeurotecServiceController {
                     
                 }
                 
-                //mPrintWriter.println("message accepted");
+                String closeMessage = mSocketIn.readLine();
+                
             } catch (IOException ex) {
                 Logger.getLogger(NeurotecServiceController.class.getName()).log(Level.SEVERE, null, ex);
             } finally {
