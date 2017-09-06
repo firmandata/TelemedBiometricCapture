@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package views;
 
 import java.lang.reflect.InvocationTargetException;
@@ -14,22 +9,17 @@ import java.awt.event.ComponentEvent;
 import java.awt.Image;
 
 import constants.Config;
+import constants.Constant;
 import controllers.JavaScriptController;
 import fingerprint.device.Neurotec;
 import helpers.ImageHelper;
-import netscape.javascript.JSObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/**
- *
- * @author ADMIN
- */
 public class IndexLayout extends javax.swing.JFrame {
 
     protected BrowserView mBrowserView;
-    protected JavaScriptController mJavaScriptController;
     protected LayoutListener mLayoutListener;
     
     /**
@@ -41,9 +31,6 @@ public class IndexLayout extends javax.swing.JFrame {
         
         // Initialize
         initComponents();
-        
-        // Initialize and add BrowserView to jPanelMain
-        initWebView();
         
         // Layout listener
         addComponentListener(new ComponentAdapter() {
@@ -117,8 +104,8 @@ public class IndexLayout extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
     
-    protected void initWebView() {
-        mBrowserView = new BrowserView(jPanelMain, Config.TELEMED_URL);
+    public void initWebView(final JavaScriptController javaScriptController) {
+        mBrowserView = new BrowserView(Constant.BROWSER_PROVIDER_WEBVIEW, javaScriptController, jPanelMain, Config.TELEMED_URL);
         mBrowserView.setPageStateListener(new BrowserView.PageStateListener() {
             @Override
             public void onPageStateReady(String url) {
@@ -137,17 +124,7 @@ public class IndexLayout extends javax.swing.JFrame {
 
             @Override
             public void onPageStateSucceeded(String url) {
-                mBrowserView.executeScript("window", new BrowserView.ExecuteScriptListener() {
-                    @Override
-                    public void onExecutedScript(Object result) {
-                        // Attach app variable to page
-                        JSObject jsObject = (JSObject) result;
-                        jsObject.setMember("app", mJavaScriptController);
-                        
-                        // Send ready flag to app_ready() function
-                        mBrowserView.executeScript("app_ready()");
-                    }
-                });
+                
             }
 
             @Override
@@ -165,10 +142,6 @@ public class IndexLayout extends javax.swing.JFrame {
                 mBrowserView.openDocument(url);
             }
         });
-    }
-    
-    public void setJavaScriptController(final JavaScriptController javaScriptController) {
-        mJavaScriptController = javaScriptController;
     }
     
     public void setLayoutListener(final LayoutListener layoutListener) {

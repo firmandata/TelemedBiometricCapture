@@ -14,7 +14,6 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
     
     protected IndexLayout mIndexView;
     protected FingerDevice mFingerDevice;
-    protected JavaScriptController mJavaScriptController;
     
     protected Image mImage;
     
@@ -23,7 +22,6 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
         mFingerDevice = new FingerDevice(Config.FINGER_SDK);
         if (Config.FINGER_SDK == Constant.FINGER_SDK_DIGITAL_PERSONA_ONE_TOUCH)
             mFingerDevice.setNeurotecService(Config.NEUROTECT_SERVICE_HOST, Config.NEUROTECT_SERVICE_PORT);
-        mJavaScriptController = new JavaScriptController(this);
     }
     
     public void showLayout() {
@@ -36,7 +34,7 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
     
     protected void initLayout() {
         mIndexView = IndexLayout.CreateLayout();
-        mIndexView.setJavaScriptController(mJavaScriptController);
+        mIndexView.initWebView(new JavaScriptController(this));
         mIndexView.setLayoutListener(new IndexLayout.LayoutListener() {
             @Override
             public void onLayoutShown() {

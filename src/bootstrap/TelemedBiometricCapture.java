@@ -34,13 +34,16 @@ public class TelemedBiometricCapture {
         }        
         
         if (isLicensed) {
-//            IndexController indexController = new IndexController();
-//            indexController.showLayout();
-            try {
-                NeurotecServiceController neurotectServiceController = new NeurotecServiceController();
-                neurotectServiceController.start(9050);
-            } catch (IOException ex) {
-                Logger.getLogger(NeurotecServiceController.class.getName()).log(Level.SEVERE, null, ex);
+            if (!Config.RUN_AS_SERVICE) {
+                IndexController indexController = new IndexController();
+                indexController.showLayout();
+            } else {
+                try {
+                    NeurotecServiceController neurotectServiceController = new NeurotecServiceController();
+                    neurotectServiceController.start(Config.NEUROTECT_SERVICE_PORT);
+                } catch (IOException ex) {
+                    Logger.getLogger(NeurotecServiceController.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         }
     }
