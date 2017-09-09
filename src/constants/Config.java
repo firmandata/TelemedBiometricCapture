@@ -1,15 +1,49 @@
 package constants;
 
+import java.io.FileInputStream;
+import java.util.Properties;
+
 public class Config {
-    public static final String TELEMED_URL = "http://192.168.5.89/telemed/index.php/member/index";
+    public static String TELEMED_URL = "https://127.0.0.1/telemed/index.php/member/index";
     
-    public static final int FINGER_SDK = Constant.FINGER_SDK_NEUROTEC;
+    public static int FINGER_SDK = Constant.FINGER_SDK_NEUROTEC;
     
-    public static final String NEUROTECT_SERVICE_HOST = "192.168.5.87";
-    public static final int NEUROTECT_SERVICE_PORT = 9050;
-    public static final String NEUROTECT_NSERVER_HOST = "192.168.5.55";
+    public static String NEUROTECT_SERVICE_HOST = "127.0.0.1";
+    public static int NEUROTECT_SERVICE_PORT = 9050;
     
-    public static final boolean RUN_AS_SERVICE = (FINGER_SDK == Constant.FINGER_SDK_DIGITAL_PERSONA_ONE_TOUCH ? false : true);
+    public static String NEUROTECT_NSERVER_HOST = "127.0.0.1";
+    public static int NEUROTECT_NSERVER_PORT = 25452;
+    public static int NEUROTECT_NSERVER_PORT_ADMIN = 24932;
     
-    public static final int BROWSER_PROVIDER = Constant.BROWSER_PROVIDER_JXBROWSER;
+    public static boolean RUN_AS_SERVICE = (FINGER_SDK == Constant.FINGER_SDK_DIGITAL_PERSONA_ONE_TOUCH ? false : true);
+    
+    public static int BROWSER_PROVIDER = Constant.BROWSER_PROVIDER_JXBROWSER;
+    
+    public static void extractConfigFile() {
+        try {
+            Properties properties = new Properties();
+            properties.load(new FileInputStream("config.ini"));
+            
+            TELEMED_URL = properties.getProperty("TELEMED_URL");
+            
+            FINGER_SDK = Integer.parseInt(properties.getProperty("FINGER_SDK", String.valueOf(Constant.FINGER_SDK_NEUROTEC)));
+            
+            NEUROTECT_SERVICE_HOST = properties.getProperty("NEUROTECT_SERVICE_HOST");
+            NEUROTECT_SERVICE_PORT = Integer.parseInt(properties.getProperty("NEUROTECT_SERVICE_PORT", "9050"));
+            
+            NEUROTECT_NSERVER_HOST = properties.getProperty("NEUROTECT_NSERVER_HOST");
+            NEUROTECT_NSERVER_PORT = Integer.parseInt(properties.getProperty("NEUROTECT_NSERVER_PORT", "25452"));
+            NEUROTECT_NSERVER_PORT_ADMIN = Integer.parseInt(properties.getProperty("NEUROTECT_NSERVER_PORT_ADMIN", "24932"));
+            
+            RUN_AS_SERVICE = Boolean.parseBoolean(properties.getProperty("RUN_AS_SERVICE", String.valueOf("0")));
+            if (RUN_AS_SERVICE && FINGER_SDK == Constant.FINGER_SDK_DIGITAL_PERSONA_ONE_TOUCH)
+                RUN_AS_SERVICE = false;
+            
+            BROWSER_PROVIDER = Integer.parseInt(properties.getProperty("BROWSER_PROVIDER", String.valueOf(Constant.BROWSER_PROVIDER_JXBROWSER)));
+            
+            // properties.list(System.out);
+        } catch (Exception e) {
+            
+        }
+    }
 }

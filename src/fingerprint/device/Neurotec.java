@@ -40,7 +40,7 @@ public class Neurotec implements IFingerDevice {
     
     public Neurotec() {
         mBiometricClient = new NBiometricClient();
-        mBiometricClient.getRemoteConnections().addToCluster(Config.NEUROTECT_NSERVER_HOST, 25452, 24932);
+        mBiometricClient.getRemoteConnections().addToCluster(Config.NEUROTECT_NSERVER_HOST, Config.NEUROTECT_NSERVER_PORT, Config.NEUROTECT_NSERVER_PORT_ADMIN);
         
         mDeviceManager = mBiometricClient.getDeviceManager();
         if (mDeviceManager != null) {
