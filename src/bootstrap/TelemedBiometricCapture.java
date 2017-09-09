@@ -17,7 +17,10 @@ public class TelemedBiometricCapture {
     public static void main(String[] args) {
         boolean isLicensed = false;
         
-        Config.extractConfigFile();
+        if (args.length > 0)
+            Config.extractConfigFile(args[0]);
+        else
+            Config.extractConfigFile();
         
         if (Config.FINGER_SDK == Constant.FINGER_SDK_NEUROTEC) {
             LibraryManager.initLibraryPath();

@@ -20,9 +20,13 @@ public class Config {
     public static int BROWSER_PROVIDER = Constant.BROWSER_PROVIDER_JXBROWSER;
     
     public static void extractConfigFile() {
+        extractConfigFile("config.ini");
+    }
+    
+    public static void extractConfigFile(final String fileName) {
         try {
             Properties properties = new Properties();
-            properties.load(new FileInputStream("config.ini"));
+            properties.load(new FileInputStream(fileName));
             
             TELEMED_URL = properties.getProperty("TELEMED_URL");
             
@@ -35,13 +39,13 @@ public class Config {
             NEUROTECT_NSERVER_PORT = Integer.parseInt(properties.getProperty("NEUROTECT_NSERVER_PORT", "25452"));
             NEUROTECT_NSERVER_PORT_ADMIN = Integer.parseInt(properties.getProperty("NEUROTECT_NSERVER_PORT_ADMIN", "24932"));
             
-            RUN_AS_SERVICE = Boolean.parseBoolean(properties.getProperty("RUN_AS_SERVICE", String.valueOf("0")));
+            RUN_AS_SERVICE = Boolean.parseBoolean(properties.getProperty("RUN_AS_SERVICE", String.valueOf("false")));
             if (RUN_AS_SERVICE && FINGER_SDK == Constant.FINGER_SDK_DIGITAL_PERSONA_ONE_TOUCH)
                 RUN_AS_SERVICE = false;
             
             BROWSER_PROVIDER = Integer.parseInt(properties.getProperty("BROWSER_PROVIDER", String.valueOf(Constant.BROWSER_PROVIDER_JXBROWSER)));
             
-            // properties.list(System.out);
+            properties.list(System.out);
         } catch (Exception e) {
             
         }
