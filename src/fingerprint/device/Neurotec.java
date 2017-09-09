@@ -68,7 +68,7 @@ public class Neurotec implements IFingerDevice {
 
     @Override
     public boolean startCapture() {
-        boolean isStart = false;
+        boolean isStart = true;
         
         if (!mCapturing) {
             mCapturing = true;
@@ -92,7 +92,7 @@ public class Neurotec implements IFingerDevice {
     
     @Override
     public boolean stopCapture() {
-        boolean isStop = false;
+        boolean isStop = true;
         
         if (mCapturing) {
             mBiometricClient.cancel();

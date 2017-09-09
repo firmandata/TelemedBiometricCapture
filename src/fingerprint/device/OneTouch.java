@@ -68,7 +68,7 @@ public class OneTouch implements IFingerDevice {
     
     @Override
     public boolean startCapture() {
-        boolean isStart = false;
+        boolean isStart = true;
         
         if (!mDPFPCapture.isStarted()) {
             mDPFPCapture.startCapture();
@@ -89,7 +89,7 @@ public class OneTouch implements IFingerDevice {
     
     @Override
     public boolean stopCapture() {
-        boolean isStop = false;
+        boolean isStop = true;
         
         if (mDPFPCapture.isStarted()) {
             mDPFPCapture.stopCapture();

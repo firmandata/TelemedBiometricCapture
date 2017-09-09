@@ -202,11 +202,6 @@ public class BrowserWebView implements IBrowserView {
     
     @Override
     public void openDocument(final String url) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                SystemHelper.openBrowser(url);
-            }
-        });
+        SystemHelper.openBrowser(url);
     }
 }

@@ -105,41 +105,46 @@ public class IndexLayout extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
     
     public void initWebView(final JavaScriptController javaScriptController) {
-        mBrowserView = new BrowserView(Constant.BROWSER_PROVIDER_WEBVIEW, javaScriptController, jPanelMain, Config.TELEMED_URL);
-        mBrowserView.setPageStateListener(new BrowserView.PageStateListener() {
+        SwingUtilities.invokeLater(new Runnable() {
             @Override
-            public void onPageStateReady(String url) {
-                
-            }
+            public void run() {
+                mBrowserView = new BrowserView(Config.BROWSER_PROVIDER, javaScriptController, jPanelMain, Config.TELEMED_URL);
+                mBrowserView.setPageStateListener(new BrowserView.PageStateListener() {
+                    @Override
+                    public void onPageStateReady(String url) {
 
-            @Override
-            public void onPageStateScheduled(String url) {
-                
-            }
+                    }
 
-            @Override
-            public void onPageStateRunning(String url) {
-                
-            }
+                    @Override
+                    public void onPageStateScheduled(String url) {
 
-            @Override
-            public void onPageStateSucceeded(String url) {
-                
-            }
+                    }
 
-            @Override
-            public void onPageStateCancelled(String url) {
-                
-            }
+                    @Override
+                    public void onPageStateRunning(String url) {
 
-            @Override
-            public void onPageStateFailed(String url) {
-                
-            }
+                    }
 
-            @Override
-            public void onPagePopupOpen(String url) {
-                mBrowserView.openDocument(url);
+                    @Override
+                    public void onPageStateSucceeded(String url) {
+
+                    }
+
+                    @Override
+                    public void onPageStateCancelled(String url) {
+
+                    }
+
+                    @Override
+                    public void onPageStateFailed(String url) {
+
+                    }
+
+                    @Override
+                    public void onPagePopupOpen(String url) {
+                        mBrowserView.openDocument(url);
+                    }
+                });
             }
         });
     }

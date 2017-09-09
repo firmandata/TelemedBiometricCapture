@@ -38,12 +38,12 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
         mIndexView.setLayoutListener(new IndexLayout.LayoutListener() {
             @Override
             public void onLayoutShown() {
-                startCapture();
+                //startCapture();
             }
 
             @Override
             public void onLayoutHidden() {
-                stopCapture();
+                //stopCapture();
             }
         });
     }

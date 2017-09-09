@@ -22,12 +22,17 @@ public class jxBrowserView implements IBrowserView {
         mJavaScriptController = javaScriptController;
         
         mBrowser = new Browser();
+        mBrowser.setAudioMuted(false);
+        mBrowser.setZoomEnabled(false);
         mBrowser.addScriptContextListener(new ScriptContextAdapter() {
             @Override
             public void onScriptContextCreated(ScriptContextEvent scriptContextEvent) {
                 Browser browser = scriptContextEvent.getBrowser();
                 JSValue jsValue = browser.executeJavaScriptAndReturnValue("window");
                 jsValue.asObject().setProperty("app", mJavaScriptController);
+                
+                // Send ready flag to app_ready() function
+                executeScript("app_ready()");
             }
         });
         
@@ -55,24 +60,14 @@ public class jxBrowserView implements IBrowserView {
     
     @Override
     public void executeScript(final String script) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                mBrowser.executeJavaScript(script);
-            }
-        });
+        mBrowser.executeJavaScript(script);
     }
     
     @Override
     public void executeScript(final String script, final views.BrowserView.ExecuteScriptListener executeScriptListener) {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                JSValue jsValue = mBrowser.executeJavaScriptAndReturnValue(script);
-                if (executeScriptListener != null)
-                    executeScriptListener.onExecutedScript(jsValue);
-            }
-        });
+        JSValue jsValue = mBrowser.executeJavaScriptAndReturnValue(script);
+        if (executeScriptListener != null)
+            executeScriptListener.onExecutedScript(jsValue);
     }
     
     @Override
