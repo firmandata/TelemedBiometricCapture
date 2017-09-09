@@ -7,6 +7,7 @@ import constants.Constant;
 import fingerprint.device.FingerDevice;
 import fingerprint.device.IFingerDeviceEvent;
 import fingerprint.device.Neurotec;
+import javax.swing.SwingUtilities;
 
 import views.IndexLayout;
 
@@ -33,8 +34,7 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
     }
     
     protected void initLayout() {
-        mIndexView = IndexLayout.CreateLayout();
-        mIndexView.initWebView(new JavaScriptController(this));
+        mIndexView = IndexLayout.CreateLayout(new JavaScriptController(this));
         mIndexView.setLayoutListener(new IndexLayout.LayoutListener() {
             @Override
             public void onLayoutShown() {
@@ -93,86 +93,131 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
     
     @Override
     public void onRequestFingerCaptureStatus() {
-        mIndexView.setResponseFingerCaptureStatus(mFingerDevice.isCapturing());
+        Thread thread = new Thread(){
+            @Override
+            public void run() {
+                mIndexView.setResponseFingerCaptureStatus(mFingerDevice.isCapturing());
+            }
+        };
+        thread.start();
     }
 
     @Override
     public void onRequestFingerCaptureStart() {
-        boolean isStarted = startCapture();
-        mIndexView.setResponseFingerCaptureStart(isStarted);
+        Thread thread = new Thread(){
+            @Override
+            public void run() {
+                boolean isStarted = startCapture();
+                mIndexView.setResponseFingerCaptureStart(isStarted);
+            }
+        };
+        thread.start();
     }
 
     @Override
     public void onRequestFingerCaptureStop() {
-        boolean isStopped = stopCapture();
-        mIndexView.setResponseFingerCaptureStop(isStopped);
+        Thread thread = new Thread(){
+            @Override
+            public void run() {
+                boolean isStopped = stopCapture();
+                mIndexView.setResponseFingerCaptureStop(isStopped);
+            }
+        };
+        thread.start();
     }
 
     @Override
     public void onRequestFingerImage() {
-        mIndexView.setResponseFingerImageBase64(mImage);
+        Thread thread = new Thread(){
+            @Override
+            public void run() {
+                mIndexView.setResponseFingerImageBase64(mImage);
+            }
+        };
+        thread.start();
     }
 
     @Override
     public void onRequestTemplate(int[] fingerIndexPositions, String[] fingerBase64Images) {
-        mFingerDevice.createTemplateFromImages(fingerIndexPositions, fingerBase64Images, new Neurotec.CreateTemplateListener() {
+        Thread thread = new Thread(){
             @Override
-            public void onTemplateCreateSuccess(String templateBase64) {
-                mIndexView.setResponseTemplateBase64(templateBase64);
-            }
+            public void run() {
+                mFingerDevice.createTemplateFromImages(fingerIndexPositions, fingerBase64Images, new Neurotec.CreateTemplateListener() {
+                    @Override
+                    public void onTemplateCreateSuccess(String templateBase64) {
+                        mIndexView.setResponseTemplateBase64(templateBase64);
+                    }
 
-            @Override
-            public void onTemplateCreateFailed(String message) {
-                mIndexView.setResponseTemplateFailed(message);
+                    @Override
+                    public void onTemplateCreateFailed(String message) {
+                        mIndexView.setResponseTemplateFailed(message);
+                    }
+                });
             }
-        });
+        };
+        thread.start();
     }
 
     @Override
     public void onTemplateAdd(int id, String templateBase64) {
-        mFingerDevice.templateAdd(id, templateBase64, new Neurotec.TemplateAddListener() {
-
+        Thread thread = new Thread(){
             @Override
-            public void onTemplateAddSuccess(int id) {
-                mIndexView.setResponseTemplateAdd(id);
-            }
+            public void run() {
+                mFingerDevice.templateAdd(id, templateBase64, new Neurotec.TemplateAddListener() {
+                    @Override
+                    public void onTemplateAddSuccess(int id) {
+                        mIndexView.setResponseTemplateAdd(id);
+                    }
 
-            @Override
-            public void onTemplateAddFailed(String message) {
-                mIndexView.setResponseTemplateAddFailed(message);
+                    @Override
+                    public void onTemplateAddFailed(String message) {
+                        mIndexView.setResponseTemplateAddFailed(message);
+                    }
+                });
             }
-        });
+        };
+        thread.start();
     }
 
     @Override
     public void onTemplateDelete(int id) {
-        mFingerDevice.templateDelete(id, new Neurotec.TemplateDeleteListener() {
-
+        Thread thread = new Thread(){
             @Override
-            public void onTemplateDeleteSuccess(int id) {
-                mIndexView.setResponseTemplateDelete(id);
-            }
+            public void run() {
+                mFingerDevice.templateDelete(id, new Neurotec.TemplateDeleteListener() {
+                    @Override
+                    public void onTemplateDeleteSuccess(int id) {
+                        mIndexView.setResponseTemplateDelete(id);
+                    }
 
-            @Override
-            public void onTemplateDeleteFailed(String message) {
-                mIndexView.setResponseTemplateDeleteFailed(message);
+                    @Override
+                    public void onTemplateDeleteFailed(String message) {
+                        mIndexView.setResponseTemplateDeleteFailed(message);
+                    }
+                });
             }
-        });
+        };
+        thread.start();
     }
 
     @Override
     public void onTemplateIdentify(String templateBase64) {
-        mFingerDevice.templateIdentify(templateBase64, new Neurotec.TemplateIdentifyListener() {
-
+        Thread thread = new Thread(){
             @Override
-            public void onTemplateIdentifySuccess(Neurotec.TemplateIdentifyResult[] templateIdentifyResults) {
-                mIndexView.setResponseTemplateIdentify(templateIdentifyResults);
-            }
+            public void run() {
+                mFingerDevice.templateIdentify(templateBase64, new Neurotec.TemplateIdentifyListener() {
+                    @Override
+                    public void onTemplateIdentifySuccess(Neurotec.TemplateIdentifyResult[] templateIdentifyResults) {
+                        mIndexView.setResponseTemplateIdentify(templateIdentifyResults);
+                    }
 
-            @Override
-            public void onTemplateIdentifyFailed(String message) {
-                mIndexView.setResponseTemplateIdentifyFailed(message);
+                    @Override
+                    public void onTemplateIdentifyFailed(String message) {
+                        mIndexView.setResponseTemplateIdentifyFailed(message);
+                    }
+                });
             }
-        });
+        };
+        thread.start();
     }
 }

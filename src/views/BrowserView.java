@@ -47,11 +47,9 @@ public class BrowserView implements IBrowserView {
     }
     
     public interface PageStateListener {
-        void onPageStateReady(String url);
         void onPageStateScheduled(String url);
         void onPageStateRunning(String url);
         void onPageStateSucceeded(String url);
-        void onPageStateCancelled(String url);
         void onPageStateFailed(String url);
         void onPagePopupOpen(String url);
     }

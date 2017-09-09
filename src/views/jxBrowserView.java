@@ -2,13 +2,19 @@ package views;
 
 import com.teamdev.jxbrowser.chromium.Browser;
 import com.teamdev.jxbrowser.chromium.JSValue;
+import com.teamdev.jxbrowser.chromium.events.FailLoadingEvent;
+import com.teamdev.jxbrowser.chromium.events.FinishLoadingEvent;
+import com.teamdev.jxbrowser.chromium.events.LoadAdapter;
+import com.teamdev.jxbrowser.chromium.events.ProvisionalLoadingEvent;
 import com.teamdev.jxbrowser.chromium.events.ScriptContextAdapter;
 import com.teamdev.jxbrowser.chromium.events.ScriptContextEvent;
+import com.teamdev.jxbrowser.chromium.events.StartLoadingEvent;
 import com.teamdev.jxbrowser.chromium.swing.BrowserView;
 import controllers.JavaScriptController;
 import java.awt.BorderLayout;
 import javafx.application.Platform;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 public class jxBrowserView implements IBrowserView {
     
@@ -30,9 +36,42 @@ public class jxBrowserView implements IBrowserView {
                 Browser browser = scriptContextEvent.getBrowser();
                 JSValue jsValue = browser.executeJavaScriptAndReturnValue("window");
                 jsValue.asObject().setProperty("app", mJavaScriptController);
-                
-                // Send ready flag to app_ready() function
-                executeScript("app_ready()");
+            }
+        });
+        mBrowser.addLoadListener(new LoadAdapter() {
+            @Override
+            public void onStartLoadingFrame(StartLoadingEvent startLoadingEvent) {
+                if (startLoadingEvent.isMainFrame()) {
+                    if (mPageStateListener != null)
+                        mPageStateListener.onPageStateScheduled(startLoadingEvent.getValidatedURL());
+                }
+            }
+            
+            @Override
+            public void onProvisionalLoadingFrame(ProvisionalLoadingEvent provisionalLoadingEvent) {
+                if (provisionalLoadingEvent.isMainFrame()) {
+                    if (mPageStateListener != null)
+                        mPageStateListener.onPageStateRunning(provisionalLoadingEvent.getURL());
+                }
+            }
+
+            @Override
+            public void onFinishLoadingFrame(FinishLoadingEvent finishLoadingEvent) {
+                if (finishLoadingEvent.isMainFrame()) {
+                    // Send ready flag to app_ready() function
+                    executeScript("app_ready()");
+                    
+                    if (mPageStateListener != null)
+                        mPageStateListener.onPageStateSucceeded(finishLoadingEvent.getValidatedURL());
+                }
+            }
+            
+            @Override
+            public void onFailLoadingFrame(FailLoadingEvent failLoadingEvent) {
+                if (failLoadingEvent.isMainFrame()) {
+                    if (mPageStateListener != null)
+                        mPageStateListener.onPageStateFailed(failLoadingEvent.getValidatedURL());
+                }
             }
         });
         

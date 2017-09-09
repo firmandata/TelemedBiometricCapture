@@ -77,9 +77,8 @@ public class BrowserWebView implements IBrowserView {
                     public void changed(ObservableValue<? extends Worker.State> observableValue, Worker.State oldState, Worker.State newState) {
                         if (mPageStateListener != null) {
                             String url = mWebEngine.getLocation();
-                            if (newState == Worker.State.READY)
-                                mPageStateListener.onPageStateReady(url);
-                            else if (newState == Worker.State.SCHEDULED)
+                            if (newState == Worker.State.READY) {
+                            } else if (newState == Worker.State.SCHEDULED)
                                 mPageStateListener.onPageStateScheduled(url);
                             else if (newState == Worker.State.RUNNING)
                                 mPageStateListener.onPageStateRunning(url);
@@ -97,9 +96,9 @@ public class BrowserWebView implements IBrowserView {
                                 });
 
                                 mPageStateListener.onPageStateSucceeded(url);
-                            } else if (newState == Worker.State.CANCELLED)
-                                mPageStateListener.onPageStateCancelled(url);
-                            else if (newState == Worker.State.FAILED)
+                            } else if (newState == Worker.State.CANCELLED) {
+                                
+                            } else if (newState == Worker.State.FAILED)
                                 mPageStateListener.onPageStateFailed(url);
                         }
                     }
