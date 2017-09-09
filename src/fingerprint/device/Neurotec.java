@@ -14,6 +14,7 @@ import com.neurotec.devices.NDeviceType;
 import com.neurotec.images.NImage;
 import com.neurotec.io.NBuffer;
 import com.neurotec.util.concurrent.CompletionHandler;
+import constants.Config;
 
 import helpers.ImageHelper;
 import helpers.Utils;
@@ -39,7 +40,7 @@ public class Neurotec implements IFingerDevice {
     
     public Neurotec() {
         mBiometricClient = new NBiometricClient();
-        mBiometricClient.getRemoteConnections().addToCluster("localhost", 25452, 24932);
+        mBiometricClient.getRemoteConnections().addToCluster(Config.NEUROTECT_NSERVER_HOST, 25452, 24932);
         
         mDeviceManager = mBiometricClient.getDeviceManager();
         if (mDeviceManager != null) {
