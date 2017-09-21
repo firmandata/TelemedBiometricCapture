@@ -10,10 +10,15 @@ import com.neurotec.biometrics.NSubject;
 import com.neurotec.biometrics.NTemplate;
 import com.neurotec.biometrics.client.NBiometricClient;
 import com.neurotec.devices.NDeviceManager;
+import com.neurotec.devices.NDevice;
 import com.neurotec.devices.NDeviceType;
+import com.neurotec.devices.NFScanner;
 import com.neurotec.images.NImage;
 import com.neurotec.io.NBuffer;
+import com.neurotec.plugins.NPlugin;
 import com.neurotec.util.concurrent.CompletionHandler;
+import com.neurotec.util.event.NCollectionChangeEvent;
+import com.neurotec.util.event.NCollectionChangeListener;
 import constants.Config;
 
 import helpers.ImageHelper;
@@ -42,16 +47,21 @@ public class Neurotec implements IFingerDevice {
         mBiometricClient = new NBiometricClient();
         mBiometricClient.getRemoteConnections().addToCluster(Config.NEUROTECT_NSERVER_HOST, Config.NEUROTECT_NSERVER_PORT, Config.NEUROTECT_NSERVER_PORT_ADMIN);
         
-        mDeviceManager = mBiometricClient.getDeviceManager();
+        mDeviceManager = new NDeviceManager();
         if (mDeviceManager != null) {
             mDeviceManager.setDeviceTypes(EnumSet.of(NDeviceType.FINGER_SCANNER));
+            mDeviceManager.setAutoPlug(true);
             mDeviceManager.initialize();
+            
+            for (NPlugin plugin : NDeviceManager.getPluginManager().getPlugins()) {
+                System.out.println("ID : " + String.valueOf(plugin.getModule().getId()));
+            }
         }
         
         NFinger finger = new NFinger();
         
         mSubject = new NSubject();
-		mSubject.getFingers().add(finger);
+        mSubject.getFingers().add(finger);
         
         mCaptureCompletionHandler = new CaptureCompletionHandler();
         
@@ -69,18 +79,34 @@ public class Neurotec implements IFingerDevice {
 
     @Override
     public boolean startCapture() {
-        boolean isStart = true;
+        boolean isStart = false;
         
         if (!mCapturing) {
-            mCapturing = true;
+            // search finger scanner
+            NFScanner nFScanner = null;
+            for (NDevice device : mDeviceManager.getDevices())
+            {
+                if (device instanceof NFScanner)
+                {
+                    nFScanner = (NFScanner) device;
+                    break;
+                }
+            }
             
-            if (mFingerDeviceEvent != null)
-                mFingerDeviceEvent.onFingerDeviceStartCapture();
-            
-            NBiometricTask biometricTask = mBiometricClient.createTask(EnumSet.of(NBiometricOperation.CAPTURE, NBiometricOperation.CREATE_TEMPLATE), mSubject);
-            mBiometricClient.performTask(biometricTask, null, mCaptureCompletionHandler);
-            
-            isStart = true;
+            if (nFScanner != null)
+            {
+                mBiometricClient.setFingerScanner(nFScanner);
+                
+                mCapturing = true;
+                
+                if (mFingerDeviceEvent != null)
+                    mFingerDeviceEvent.onFingerDeviceStartCapture();
+
+                NBiometricTask biometricTask = mBiometricClient.createTask(EnumSet.of(NBiometricOperation.CAPTURE, NBiometricOperation.CREATE_TEMPLATE), mSubject);
+                mBiometricClient.performTask(biometricTask, null, mCaptureCompletionHandler);
+
+                isStart = true;
+            }
         }
         
         return isStart;
@@ -97,6 +123,7 @@ public class Neurotec implements IFingerDevice {
         
         if (mCapturing) {
             mBiometricClient.cancel();
+            mBiometricClient.setFingerScanner(null);
             
             if (mFingerDeviceEvent != null)
                 mFingerDeviceEvent.onFingerDeviceStopCapture();
@@ -213,22 +240,20 @@ public class Neurotec implements IFingerDevice {
     }
     
     protected class CaptureCompletionHandler implements CompletionHandler<NBiometricTask, Object> {
-
-		@Override
-		public void completed(final NBiometricTask result, final Object attachment) {
-			if (mFingerDeviceEvent != null) {
+        @Override
+        public void completed(final NBiometricTask result, final Object attachment) {
+            if (mFingerDeviceEvent != null) {
                 NImage image = mSubject.getFingers().get(0).getImage();
                 if (image != null)
                     mFingerDeviceEvent.onFingerDeviceImageCaptured(image.toImage());
             }
-		}
+        }
 
-		@Override
-		public void failed(final Throwable th, final Object attachment) {
-			
-		}
+        @Override
+        public void failed(final Throwable th, final Object attachment) {
 
-	}
+        }
+    }
     
     protected class TemplateCreationHandler implements CompletionHandler<NBiometricTask, Object> {
 
@@ -245,30 +270,29 @@ public class Neurotec implements IFingerDevice {
         public void setCreateTemplateListener(final CreateTemplateListener createTemplateListener) {
             mCreateTemplateListener = createTemplateListener;
         }
-        
-		@Override
-		public void completed(final NBiometricTask task, final Object attachment) {
-            NBiometricStatus status = task.getStatus();
-            if (status == NBiometricStatus.OK) {
-                if (mCreateTemplateListener != null) {
-                    byte[] templateBytes = mSubject.getTemplate().save().toByteArray();
-                    String base64Encoded = Base64.encodeBase64String(templateBytes);
-                    mCreateTemplateListener.onTemplateCreateSuccess(base64Encoded);
+            @Override
+            public void completed(final NBiometricTask task, final Object attachment) {
+                NBiometricStatus status = task.getStatus();
+                if (status == NBiometricStatus.OK) {
+                    if (mCreateTemplateListener != null) {
+                        byte[] templateBytes = mSubject.getTemplate().save().toByteArray();
+                        String base64Encoded = Base64.encodeBase64String(templateBytes);
+                        mCreateTemplateListener.onTemplateCreateSuccess(base64Encoded);
+                    }
+                } else if (status == NBiometricStatus.BAD_OBJECT) {
+                    if (mCreateTemplateListener != null)
+                        mCreateTemplateListener.onTemplateCreateFailed("Finger image quality is too low.");
+                } else {
+                    if (mCreateTemplateListener != null)
+                        mCreateTemplateListener.onTemplateCreateFailed("Failed to create template. " + status.toString());
                 }
-            } else if (status == NBiometricStatus.BAD_OBJECT) {
-                if (mCreateTemplateListener != null)
-                    mCreateTemplateListener.onTemplateCreateFailed("Finger image quality is too low.");
-            } else {
-                if (mCreateTemplateListener != null)
-                    mCreateTemplateListener.onTemplateCreateFailed("Failed to create template. " + status.toString());
             }
-		}
 
-		@Override
-		public void failed(final Throwable th, final Object attachment) {
-			if (mCreateTemplateListener != null)
-                mCreateTemplateListener.onTemplateCreateFailed(th.getMessage());
-		}
+            @Override
+            public void failed(final Throwable th, final Object attachment) {
+                if (mCreateTemplateListener != null)
+                    mCreateTemplateListener.onTemplateCreateFailed(th.getMessage());
+            }
 	}
     
     protected class TemplateAddHandler implements CompletionHandler<NBiometricTask, Object> {
@@ -287,23 +311,23 @@ public class Neurotec implements IFingerDevice {
             mTemplateAddListener = templateAddListener;
         }
         
-		@Override
-		public void completed(final NBiometricTask task, final Object attachment) {
-			if (task.getStatus() == NBiometricStatus.OK) {
+        @Override
+        public void completed(final NBiometricTask task, final Object attachment) {
+            if (task.getStatus() == NBiometricStatus.OK) {
                 if (mTemplateAddListener != null)
                     mTemplateAddListener.onTemplateAddSuccess(mId);
-			} else {
-				if (mTemplateAddListener != null)
+            } else {
+                if (mTemplateAddListener != null)
                     mTemplateAddListener.onTemplateAddFailed(task.getStatus().toString());
-			}
-		}
+            }
+        }
 
-		@Override
-		public void failed(final Throwable th, final Object attachment) {
-			if (mTemplateAddListener != null)
+        @Override
+        public void failed(final Throwable th, final Object attachment) {
+            if (mTemplateAddListener != null)
                 mTemplateAddListener.onTemplateAddFailed(th.getMessage());
-		}
-	}
+        }
+    }
     
     protected class TemplateDeleteHandler implements CompletionHandler<NBiometricTask, Object> {
 
@@ -320,23 +344,23 @@ public class Neurotec implements IFingerDevice {
             mTemplateDeleteListener = templateDeleteListener;
         }
         
-		@Override
-		public void completed(final NBiometricTask task, final Object attachment) {
-			if (task.getStatus() == NBiometricStatus.OK) {
-				if (mTemplateDeleteListener != null)
+        @Override
+        public void completed(final NBiometricTask task, final Object attachment) {
+            if (task.getStatus() == NBiometricStatus.OK) {
+                if (mTemplateDeleteListener != null)
                     mTemplateDeleteListener.onTemplateDeleteSuccess(mId);
-			} else {
-				if (mTemplateDeleteListener != null)
+            } else {
+                if (mTemplateDeleteListener != null)
                     mTemplateDeleteListener.onTemplateDeleteFailed(task.getStatus().toString());
-			}
-		}
+            }
+        }
 
-		@Override
-		public void failed(final Throwable th, final Object attachment) {
-			if (mTemplateDeleteListener != null)
+        @Override
+        public void failed(final Throwable th, final Object attachment) {
+            if (mTemplateDeleteListener != null)
                 mTemplateDeleteListener.onTemplateDeleteFailed(th.getMessage());
-		}
-	}
+        }
+    }
     
     protected class TemplateIdentifyHandler implements CompletionHandler<NBiometricTask, Object> {
 
@@ -354,10 +378,10 @@ public class Neurotec implements IFingerDevice {
             mTemplateIdentifyListener = templateIdentifyListener;
         }
         
-		@Override
-		public void completed(final NBiometricTask task, final Object attachment) {
-			if ((task.getStatus() == NBiometricStatus.OK) || (task.getStatus() == NBiometricStatus.MATCH_NOT_FOUND)) {
-				if (mTemplateIdentifyListener != null) {
+        @Override
+        public void completed(final NBiometricTask task, final Object attachment) {
+            if ((task.getStatus() == NBiometricStatus.OK) || (task.getStatus() == NBiometricStatus.MATCH_NOT_FOUND)) {
+                if (mTemplateIdentifyListener != null) {
                     List<TemplateIdentifyResult> templateIdentifyResultList = new ArrayList<TemplateIdentifyResult>();
                     for (NMatchingResult matchingResult : mSubject.getMatchingResults()) {
                         TemplateIdentifyResult templateIdentifyResult = new TemplateIdentifyResult();
@@ -365,24 +389,24 @@ public class Neurotec implements IFingerDevice {
                         templateIdentifyResult.setScore(matchingResult.getScore());
                         templateIdentifyResultList.add(templateIdentifyResult);
                     }
-                    
+
                     TemplateIdentifyResult[] templateIdentifyResults = new TemplateIdentifyResult[templateIdentifyResultList.size()];
                     templateIdentifyResultList.toArray(templateIdentifyResults);
-                    
+
                     mTemplateIdentifyListener.onTemplateIdentifySuccess(templateIdentifyResults);
                 }
-			} else {
-				if (mTemplateIdentifyListener != null)
-                    mTemplateIdentifyListener.onTemplateIdentifyFailed(task.getStatus().toString());
-			}
-		}
+            } else {
+                if (mTemplateIdentifyListener != null)
+                mTemplateIdentifyListener.onTemplateIdentifyFailed(task.getStatus().toString());
+            }
+        }
 
-		@Override
-		public void failed(final Throwable th, final Object attachment) {
-			if (mTemplateIdentifyListener != null)
+        @Override
+        public void failed(final Throwable th, final Object attachment) {
+            if (mTemplateIdentifyListener != null)
                 mTemplateIdentifyListener.onTemplateIdentifyFailed(th.getMessage());
-		}
-	}
+        }
+    }
     
     public interface CreateTemplateListener {
         void onTemplateCreateSuccess(String templateBase64);
