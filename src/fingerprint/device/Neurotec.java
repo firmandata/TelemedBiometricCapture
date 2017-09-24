@@ -64,7 +64,7 @@ public class Neurotec implements IFingerDevice {
         return startCapture(true);
     }
     
-    public boolean startCapture(final boolean raiseFingerDeviceEvent) {
+    protected boolean startCapture(final boolean raiseFingerDeviceEvent) {
         boolean isStart = false;
         
         if (!mCapturing) {
@@ -93,8 +93,10 @@ public class Neurotec implements IFingerDevice {
                 mCapturing = true;
                 isStart = true;
                 
-                if (mFingerDeviceEvent != null)
-                    mFingerDeviceEvent.onFingerDeviceStartCapture();
+                if (raiseFingerDeviceEvent) {
+                    if (mFingerDeviceEvent != null)
+                        mFingerDeviceEvent.onFingerDeviceStartCapture();
+                }
 
                 NBiometricTask biometricTask = mBiometricClient.createTask(EnumSet.of(NBiometricOperation.CAPTURE, NBiometricOperation.CREATE_TEMPLATE), mSubjectCapture);
                 mBiometricClient.performTask(biometricTask, null, new CaptureCompletionHandler());
@@ -262,8 +264,10 @@ public class Neurotec implements IFingerDevice {
                     mFingerDeviceEvent.onFingerDeviceImageCaptureFailed("Failed to capture fingerprint. " + status.toString());
             }
             
-            if (status != NBiometricStatus.CANCELED && mCapturing)
+            if (status != NBiometricStatus.CANCELED && mCapturing) {
+                mCapturing = false;
                 startCapture(false);
+            }
         }
 
         @Override
@@ -271,8 +275,10 @@ public class Neurotec implements IFingerDevice {
             if (mFingerDeviceEvent != null)
                 mFingerDeviceEvent.onFingerDeviceImageCaptureFailed(th.getMessage());
 
-            if (mCapturing)
+            if (mCapturing) {
+                mCapturing = false;
                 startCapture(false);
+            }
         }
     }
     
