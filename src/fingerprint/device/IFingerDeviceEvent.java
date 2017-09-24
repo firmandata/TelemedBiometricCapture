@@ -5,8 +5,7 @@ import java.awt.Image;
 public interface IFingerDeviceEvent {
     void onFingerDeviceConnected();
     void onFingerDeviceStartCapture();
-    void onFingerDeviceImageCaptured(Image image);
-    void onFingerDeviceImageCaptured(String templateBase64);
+    void onFingerDeviceImageCaptured(String templateBase64, Image image);
     void onFingerDeviceImageCaptureFailed(String message);
     void onFingerDeviceStopCapture();
     void onFingerDeviceDisconnected();

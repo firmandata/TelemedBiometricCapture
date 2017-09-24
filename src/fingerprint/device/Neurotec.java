@@ -16,6 +16,7 @@ import com.neurotec.devices.NFScanner;
 import com.neurotec.images.NImage;
 import com.neurotec.io.NBuffer;
 import com.neurotec.util.concurrent.CompletionHandler;
+import java.awt.Image;
 import constants.Config;
 
 import helpers.ImageHelper;
@@ -249,11 +250,9 @@ public class Neurotec implements IFingerDevice {
                 NImage image = mSubjectCapture.getFingers().get(0).getImage();
                 if (image != null) {
                     if (mFingerDeviceEvent != null) {
-                        mFingerDeviceEvent.onFingerDeviceImageCaptured(image.toImage());
-                        
                         byte[] templateBytes = mSubjectCapture.getTemplate().save().toByteArray();
                         String base64Encoded = Base64.encodeBase64String(templateBytes);
-                        mFingerDeviceEvent.onFingerDeviceImageCaptured(base64Encoded);
+                        mFingerDeviceEvent.onFingerDeviceImageCaptured(base64Encoded, image.toImage());
                     }
                 }
             } else if (status == NBiometricStatus.BAD_OBJECT) {
