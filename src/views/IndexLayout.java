@@ -215,13 +215,23 @@ public class IndexLayout extends javax.swing.JFrame {
         });
     }
     
-    public void setResponseFingerCaptured(final Image image) {
+    public void setResponseFingerCaptured(final Image image, final String templateBase64) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 String imageString = ImageHelper.jpegToBase64(image); 
                 if (imageString != null && mBrowserView != null)
-                    mBrowserView.executeScript("app_response_finger_captured(\"" + imageString + "\", \"JPEG\")");
+                    mBrowserView.executeScript("app_response_finger_captured(\"" + imageString + "\", \"JPEG\", \"" + templateBase64 + "\")");
+            }
+        });
+    }
+    
+    public void setResponseFingerCaptureFailed(final String message) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.executeScript("app_response_finger_capture_failed(\"" + message + "\")");
             }
         });
     }

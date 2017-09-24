@@ -15,10 +15,7 @@ import com.neurotec.devices.NDeviceType;
 import com.neurotec.devices.NFScanner;
 import com.neurotec.images.NImage;
 import com.neurotec.io.NBuffer;
-import com.neurotec.plugins.NPlugin;
 import com.neurotec.util.concurrent.CompletionHandler;
-import com.neurotec.util.event.NCollectionChangeEvent;
-import com.neurotec.util.event.NCollectionChangeListener;
 import constants.Config;
 
 import helpers.ImageHelper;
@@ -33,12 +30,8 @@ import org.apache.commons.codec.binary.Base64;
 public class Neurotec implements IFingerDevice {
 
     protected final NBiometricClient mBiometricClient;
-    protected final NDeviceManager mDeviceManager;
     
-    protected NSubject mSubject;
-    
-    protected final CaptureCompletionHandler mCaptureCompletionHandler;
-    
+    protected NSubject mSubjectCapture;
     protected boolean mCapturing;
     
     protected IFingerDeviceEvent mFingerDeviceEvent;
@@ -46,24 +39,13 @@ public class Neurotec implements IFingerDevice {
     public Neurotec() {
         mBiometricClient = new NBiometricClient();
         mBiometricClient.getRemoteConnections().addToCluster(Config.NEUROTECT_NSERVER_HOST, Config.NEUROTECT_NSERVER_PORT, Config.NEUROTECT_NSERVER_PORT_ADMIN);
+        if (!Config.RUN_AS_SERVICE) {
+            mBiometricClient.setUseDeviceManager(true);
         
-        mDeviceManager = new NDeviceManager();
-        if (mDeviceManager != null) {
-            mDeviceManager.setDeviceTypes(EnumSet.of(NDeviceType.FINGER_SCANNER));
-            mDeviceManager.setAutoPlug(true);
-            mDeviceManager.initialize();
-            
-            for (NPlugin plugin : NDeviceManager.getPluginManager().getPlugins()) {
-                System.out.println("ID : " + String.valueOf(plugin.getModule().getId()));
-            }
+            NDeviceManager deviceManager = mBiometricClient.getDeviceManager();
+            deviceManager.setDeviceTypes(EnumSet.of(NDeviceType.FINGER_SCANNER));
+            deviceManager.initialize();
         }
-        
-        NFinger finger = new NFinger();
-        
-        mSubject = new NSubject();
-        mSubject.getFingers().add(finger);
-        
-        mCaptureCompletionHandler = new CaptureCompletionHandler();
         
         mCapturing = false;
     }
@@ -82,30 +64,36 @@ public class Neurotec implements IFingerDevice {
         boolean isStart = false;
         
         if (!mCapturing) {
-            // search finger scanner
             NFScanner nFScanner = null;
-            for (NDevice device : mDeviceManager.getDevices())
-            {
-                if (device instanceof NFScanner)
+            NDeviceManager deviceManager = mBiometricClient.getDeviceManager();
+            if (deviceManager != null) {
+                for (NDevice device : deviceManager.getDevices())
                 {
-                    nFScanner = (NFScanner) device;
-                    break;
+                    if (device instanceof NFScanner)
+                    {
+                        nFScanner = (NFScanner) device;
+                        break;
+                    }
                 }
             }
             
             if (nFScanner != null)
             {
+                NFinger finger = new NFinger();
+                
+                mSubjectCapture = new NSubject();
+                mSubjectCapture.getFingers().add(finger);
+
                 mBiometricClient.setFingerScanner(nFScanner);
                 
                 mCapturing = true;
+                isStart = true;
                 
                 if (mFingerDeviceEvent != null)
                     mFingerDeviceEvent.onFingerDeviceStartCapture();
 
-                NBiometricTask biometricTask = mBiometricClient.createTask(EnumSet.of(NBiometricOperation.CAPTURE, NBiometricOperation.CREATE_TEMPLATE), mSubject);
-                mBiometricClient.performTask(biometricTask, null, mCaptureCompletionHandler);
-
-                isStart = true;
+                NBiometricTask biometricTask = mBiometricClient.createTask(EnumSet.of(NBiometricOperation.CAPTURE, NBiometricOperation.CREATE_TEMPLATE), mSubjectCapture);
+                mBiometricClient.performTask(biometricTask, null, new CaptureCompletionHandler());
             }
         }
         
@@ -122,13 +110,20 @@ public class Neurotec implements IFingerDevice {
         boolean isStop = true;
         
         if (mCapturing) {
-            mBiometricClient.cancel();
-            mBiometricClient.setFingerScanner(null);
+            // mBiometricClient.cancel();
+            NFScanner fingerScanner = mBiometricClient.getFingerScanner();
+            if (fingerScanner != null) {
+                fingerScanner.cancel();
+                fingerScanner.close();
+                
+                mBiometricClient.setFingerScanner(null);
+            }
+            
+            mCapturing = false;
+            isStop = true;
             
             if (mFingerDeviceEvent != null)
                 mFingerDeviceEvent.onFingerDeviceStopCapture();
-            
-            isStop = true;
         }
         
         return isStop;
@@ -242,16 +237,44 @@ public class Neurotec implements IFingerDevice {
     protected class CaptureCompletionHandler implements CompletionHandler<NBiometricTask, Object> {
         @Override
         public void completed(final NBiometricTask result, final Object attachment) {
-            if (mFingerDeviceEvent != null) {
-                NImage image = mSubject.getFingers().get(0).getImage();
-                if (image != null)
-                    mFingerDeviceEvent.onFingerDeviceImageCaptured(image.toImage());
+            NBiometricStatus status = result.getStatus();
+            if (status == NBiometricStatus.OK) {
+                byte quality = mSubjectCapture.getFingers().get(0).getObjects().get(0).getQuality();
+                NImage image = mSubjectCapture.getFingers().get(0).getImage();
+                if (image != null) {
+                    if (mFingerDeviceEvent != null) {
+                        byte[] templateBytes = mSubjectCapture.getTemplate().save().toByteArray();
+                        String base64Encoded = Base64.encodeBase64String(templateBytes);
+                        mFingerDeviceEvent.onFingerDeviceImageCaptured(image.toImage(), base64Encoded);
+                    }
+                }
+            } else if (status == NBiometricStatus.BAD_OBJECT) {
+                if (mFingerDeviceEvent != null)
+                    mFingerDeviceEvent.onFingerDeviceImageCaptureFailed("Finger image quality is too low.");
+            } else if (status != NBiometricStatus.CANCELED) {
+                if (mFingerDeviceEvent != null)
+                    mFingerDeviceEvent.onFingerDeviceImageCaptureFailed("Failed to capture fingerprint. " + status.toString());
             }
+            
+            stopCapturingFlag();
+            if (status != NBiometricStatus.CANCELED)
+                startCapture();
         }
 
         @Override
         public void failed(final Throwable th, final Object attachment) {
+            if (mFingerDeviceEvent != null)
+                mFingerDeviceEvent.onFingerDeviceImageCaptureFailed(th.getMessage());
 
+            stopCapturingFlag();
+            startCapture();
+        }
+        
+        protected void stopCapturingFlag() {
+            mCapturing = false;
+            
+            if (mFingerDeviceEvent != null)
+                mFingerDeviceEvent.onFingerDeviceStopCapture();
         }
     }
     

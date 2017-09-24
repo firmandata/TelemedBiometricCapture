@@ -7,6 +7,7 @@ import com.digitalpersona.onetouch.capture.event.DPFPDataAdapter;
 import com.digitalpersona.onetouch.capture.event.DPFPDataEvent;
 import com.digitalpersona.onetouch.capture.event.DPFPReaderStatusAdapter;
 import com.digitalpersona.onetouch.capture.event.DPFPReaderStatusEvent;
+import helpers.ImageHelper;
 import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,9 +35,22 @@ public class OneTouch implements IFingerDevice {
             @Override
             public void dataAcquired(final DPFPDataEvent e) {
                 if (mFingerDeviceEvent != null) {
-                    Image image = toBitmap(e.getSample());
-                    if (image != null)
-                        mFingerDeviceEvent.onFingerDeviceImageCaptured(image);
+                    final Image image = toBitmap(e.getSample());
+                    if (image != null) {
+                        createTemplateFromImages(new int[] { -1 }, new String[]  { ImageHelper.jpegToBase64(image) }, new Neurotec.CreateTemplateListener() {
+                            @Override
+                            public void onTemplateCreateSuccess(String templateBase64) {
+                                mFingerDeviceEvent.onFingerDeviceImageCaptured(image, templateBase64);
+                            }
+
+                            @Override
+                            public void onTemplateCreateFailed(String message) {
+                                mFingerDeviceEvent.onFingerDeviceImageCaptureFailed(message);
+                            }
+                        });
+                    }
+                    else
+                        mFingerDeviceEvent.onFingerDeviceImageCaptureFailed("Failed to create bitmap from sample.");
                 }
             }
         });
@@ -71,12 +85,16 @@ public class OneTouch implements IFingerDevice {
         boolean isStart = true;
         
         if (!mDPFPCapture.isStarted()) {
-            mDPFPCapture.startCapture();
+            try {
+                mDPFPCapture.startCapture();
             
-            if (mFingerDeviceEvent != null)
-                mFingerDeviceEvent.onFingerDeviceStartCapture();
-            
-            isStart = true;
+                if (mFingerDeviceEvent != null)
+                    mFingerDeviceEvent.onFingerDeviceStartCapture();
+
+                isStart = true;
+            } catch (Exception ex) {
+                isStart = false;
+            }
         }
         
         return isStart;
@@ -92,12 +110,16 @@ public class OneTouch implements IFingerDevice {
         boolean isStop = true;
         
         if (mDPFPCapture.isStarted()) {
-            mDPFPCapture.stopCapture();
-            
-            if (mFingerDeviceEvent != null)
-                mFingerDeviceEvent.onFingerDeviceStopCapture();
-            
-            isStop =  true;
+            try {
+                mDPFPCapture.stopCapture();
+                
+                if (mFingerDeviceEvent != null)
+                    mFingerDeviceEvent.onFingerDeviceStopCapture();
+                
+                isStop =  true;
+            } catch (Exception ex) {
+                isStop =  false;
+            }
         }
         
         return isStop;

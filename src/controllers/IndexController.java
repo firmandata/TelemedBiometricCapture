@@ -7,7 +7,6 @@ import constants.Constant;
 import fingerprint.device.FingerDevice;
 import fingerprint.device.IFingerDeviceEvent;
 import fingerprint.device.Neurotec;
-import javax.swing.SwingUtilities;
 
 import views.IndexLayout;
 
@@ -61,9 +60,15 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
             }
 
             @Override
-            public void onFingerDeviceImageCaptured(final Image image) {
-                mIndexView.setResponseFingerCaptured(image);
+            public void onFingerDeviceImageCaptured(final Image image, String templateBase64) {
+                mIndexView.setResponseFingerCaptured(image, templateBase64);
                 mIndexView.setStatus("The fingerprint was captured.");
+            }
+
+            @Override
+            public void onFingerDeviceImageCaptureFailed(String message) {
+                mIndexView.setResponseFingerCaptureFailed(message);
+                mIndexView.setStatus(message);
             }
 
             @Override
