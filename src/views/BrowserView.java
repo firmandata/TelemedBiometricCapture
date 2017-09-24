@@ -17,6 +17,16 @@ public class BrowserView implements IBrowserView {
     }
     
     @Override
+    public void setStarted() {
+        mBrowserView.setStarted();
+    }
+
+    @Override
+    public void setClosed() {
+        mBrowserView.setClosed();
+    }
+    
+    @Override
     public void setPageStateListener(final PageStateListener pageStateListener) {
         mBrowserView.setPageStateListener(pageStateListener);
     }
@@ -45,7 +55,7 @@ public class BrowserView implements IBrowserView {
     public void openDocument(final String url) {
         mBrowserView.openDocument(url);
     }
-    
+
     public interface PageStateListener {
         void onPageStateScheduled(String url);
         void onPageStateRunning(String url);

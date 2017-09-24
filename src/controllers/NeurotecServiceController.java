@@ -26,7 +26,7 @@ public class NeurotecServiceController {
         ServerSocket serverSocket = new ServerSocket(port);
 
         try {
-            System.out.println("Starting on port : " + String.valueOf(port));
+            System.out.println("Listening on port : " + String.valueOf(port));
             while (true) {
                 new Handler(serverSocket.accept(), neurotec).start();
             }

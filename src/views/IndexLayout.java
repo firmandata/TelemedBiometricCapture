@@ -215,13 +215,23 @@ public class IndexLayout extends javax.swing.JFrame {
         });
     }
     
-    public void setResponseFingerCaptured(final Image image, final String templateBase64) {
+    public void setResponseFingerCaptured(final Image image) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 String imageString = ImageHelper.jpegToBase64(image); 
                 if (imageString != null && mBrowserView != null)
-                    mBrowserView.executeScript("app_response_finger_captured(\"" + imageString + "\", \"JPEG\", \"" + templateBase64 + "\")");
+                    mBrowserView.executeScript("app_response_finger_captured_image(\"" + imageString + "\", \"JPEG\")");
+            }
+        });
+    }
+    
+    public void setResponseFingerCaptured(final String templateBase64) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (templateBase64 != null && mBrowserView != null)
+                    mBrowserView.executeScript("app_response_finger_captured_template(\"" + templateBase64 + "\")");
             }
         });
     }
@@ -342,6 +352,18 @@ public class IndexLayout extends javax.swing.JFrame {
         });
     }
     
+    public void setAppClose() {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (mBrowserView != null)
+                    mBrowserView.setClosed();
+                
+                // Close application
+                System.exit(0);
+            }
+        });
+    }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabelStatus;

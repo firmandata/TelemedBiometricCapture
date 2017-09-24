@@ -61,6 +61,10 @@ public class Neurotec implements IFingerDevice {
 
     @Override
     public boolean startCapture() {
+        return startCapture(true);
+    }
+    
+    public boolean startCapture(final boolean raiseFingerDeviceEvent) {
         boolean isStart = false;
         
         if (!mCapturing) {
@@ -243,9 +247,11 @@ public class Neurotec implements IFingerDevice {
                 NImage image = mSubjectCapture.getFingers().get(0).getImage();
                 if (image != null) {
                     if (mFingerDeviceEvent != null) {
+                        mFingerDeviceEvent.onFingerDeviceImageCaptured(image.toImage());
+                        
                         byte[] templateBytes = mSubjectCapture.getTemplate().save().toByteArray();
                         String base64Encoded = Base64.encodeBase64String(templateBytes);
-                        mFingerDeviceEvent.onFingerDeviceImageCaptured(image.toImage(), base64Encoded);
+                        mFingerDeviceEvent.onFingerDeviceImageCaptured(base64Encoded);
                     }
                 }
             } else if (status == NBiometricStatus.BAD_OBJECT) {
@@ -256,9 +262,8 @@ public class Neurotec implements IFingerDevice {
                     mFingerDeviceEvent.onFingerDeviceImageCaptureFailed("Failed to capture fingerprint. " + status.toString());
             }
             
-            stopCapturingFlag();
-            if (status != NBiometricStatus.CANCELED)
-                startCapture();
+            if (status != NBiometricStatus.CANCELED && mCapturing)
+                startCapture(false);
         }
 
         @Override
@@ -266,15 +271,8 @@ public class Neurotec implements IFingerDevice {
             if (mFingerDeviceEvent != null)
                 mFingerDeviceEvent.onFingerDeviceImageCaptureFailed(th.getMessage());
 
-            stopCapturingFlag();
-            startCapture();
-        }
-        
-        protected void stopCapturingFlag() {
-            mCapturing = false;
-            
-            if (mFingerDeviceEvent != null)
-                mFingerDeviceEvent.onFingerDeviceStopCapture();
+            if (mCapturing)
+                startCapture(false);
         }
     }
     

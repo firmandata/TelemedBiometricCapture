@@ -63,7 +63,7 @@ public final class LibraryManager {
         
         String part = workingDirectory.substring(0, index);
         if (Platform.isWindows()) {
-	    path.append(part);
+            path.append(part);
             path.append(Utils.FILE_SEPARATOR);
             path.append("lib");
             path.append(Utils.FILE_SEPARATOR);

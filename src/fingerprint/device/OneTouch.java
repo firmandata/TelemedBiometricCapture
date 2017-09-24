@@ -37,10 +37,11 @@ public class OneTouch implements IFingerDevice {
                 if (mFingerDeviceEvent != null) {
                     final Image image = toBitmap(e.getSample());
                     if (image != null) {
+                        mFingerDeviceEvent.onFingerDeviceImageCaptured(image);
                         createTemplateFromImages(new int[] { -1 }, new String[]  { ImageHelper.jpegToBase64(image) }, new Neurotec.CreateTemplateListener() {
                             @Override
                             public void onTemplateCreateSuccess(String templateBase64) {
-                                mFingerDeviceEvent.onFingerDeviceImageCaptured(image, templateBase64);
+                                mFingerDeviceEvent.onFingerDeviceImageCaptured(templateBase64);
                             }
 
                             @Override

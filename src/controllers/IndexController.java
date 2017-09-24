@@ -60,15 +60,21 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
             }
 
             @Override
-            public void onFingerDeviceImageCaptured(final Image image, String templateBase64) {
-                mIndexView.setResponseFingerCaptured(image, templateBase64);
-                mIndexView.setStatus("The fingerprint was captured.");
+            public void onFingerDeviceImageCaptured(Image image) {
+                mIndexView.setResponseFingerCaptured(image);
+                mIndexView.setStatus("The fingerprint was captured image.");
             }
 
             @Override
+            public void onFingerDeviceImageCaptured(String templateBase64) {
+                mIndexView.setResponseFingerCaptured(templateBase64);
+                mIndexView.setStatus("The fingerprint was captured template.");
+            }
+            
+            @Override
             public void onFingerDeviceImageCaptureFailed(String message) {
                 mIndexView.setResponseFingerCaptureFailed(message);
-                mIndexView.setStatus(message);
+                mIndexView.setStatus("The fingerprint capture failed. " + message);
             }
 
             @Override

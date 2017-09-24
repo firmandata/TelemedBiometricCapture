@@ -24,6 +24,8 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import netscape.javascript.JSObject;
 
+import constants.Config;
+
 public class BrowserWebView implements IBrowserView {
     
     protected Stage mStage;
@@ -90,8 +92,7 @@ public class BrowserWebView implements IBrowserView {
                                         JSObject jsObject = (JSObject) result;
                                         jsObject.setMember("app", mJavaScriptController);
 
-                                        // Send ready flag to app_ready() function
-                                        executeScript("app_ready()");
+                                        setStarted();
                                     }
                                 });
 
@@ -143,6 +144,18 @@ public class BrowserWebView implements IBrowserView {
                 });
             }
         });
+    }
+    
+    @Override
+    public void setStarted() {
+        // Send ready flag to app_ready() function
+        executeScript("app_ready(" + Config.FINGER_SDK + ", " + Config.BROWSER_PROVIDER + ")");
+    }
+
+    @Override
+    public void setClosed() {
+        // Send close flag to app_closed() function
+        executeScript("app_closed()");
     }
     
     @Override
