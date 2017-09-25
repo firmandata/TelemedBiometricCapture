@@ -4,9 +4,9 @@ import java.io.FileInputStream;
 import java.util.Properties;
 
 public class Config {
-    public static String TELEMED_URL = "https://10.10.13.78/telemed/index.php/member/index";
+    public static String TELEMED_URL = "https://127.0.0.1/telemed/index.php/member/index";
     
-    public static int FINGER_SDK = Constant.FINGER_SDK_DIGITAL_PERSONA_ONE_TOUCH;
+    public static int FINGER_SDK = Constant.FINGER_SDK_NEUROTEC;
     
     public static String NEUROTECT_SERVICE_HOST = "127.0.0.1";
     public static int NEUROTECT_SERVICE_PORT = 9050;
@@ -15,9 +15,11 @@ public class Config {
     public static int NEUROTECT_NSERVER_PORT = 25452;
     public static int NEUROTECT_NSERVER_PORT_ADMIN = 24932;
     
-    public static boolean RUN_AS_SERVICE = (FINGER_SDK == Constant.FINGER_SDK_DIGITAL_PERSONA_ONE_TOUCH ? false : false);
+    public static boolean RUN_AS_SERVICE = false;
     
     public static int BROWSER_PROVIDER = Constant.BROWSER_PROVIDER_JXBROWSER;
+    
+    public static String BOOTH = "1";
     
     public static void extractConfigFile() {
         extractConfigFile("config.ini");
@@ -44,6 +46,8 @@ public class Config {
                 RUN_AS_SERVICE = false;
             
             BROWSER_PROVIDER = Integer.parseInt(properties.getProperty("BROWSER_PROVIDER", String.valueOf(Constant.BROWSER_PROVIDER_JXBROWSER)));
+            
+            BOOTH = properties.getProperty("BOOTH");
             
             properties.list(System.out);
         } catch (Exception e) {

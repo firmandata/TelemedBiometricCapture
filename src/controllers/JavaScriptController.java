@@ -6,6 +6,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import constants.Config;
+
 public class JavaScriptController {
     
     protected JavaScriptListener mJavaScriptListener;
@@ -70,6 +72,35 @@ public class JavaScriptController {
     
     public void templateIdentify(String templateBase64) {
         mJavaScriptListener.onTemplateIdentify(templateBase64);
+    }
+    
+    public String getConfiguration() {
+        String result = null;
+        
+        try {
+            JSONObject jsonResult = new JSONObject();
+
+            jsonResult.put("TELEMED_URL", Config.TELEMED_URL);
+            jsonResult.put("FINGER_SDK", Config.FINGER_SDK);
+            
+            jsonResult.put("NEUROTECT_SERVICE_HOST", Config.NEUROTECT_SERVICE_HOST);
+            jsonResult.put("NEUROTECT_SERVICE_PORT",Config.NEUROTECT_SERVICE_PORT);
+
+            jsonResult.put("NEUROTECT_NSERVER_HOST",Config.NEUROTECT_NSERVER_HOST);
+            jsonResult.put("NEUROTECT_NSERVER_PORT",Config.NEUROTECT_NSERVER_PORT);
+            jsonResult.put("NEUROTECT_NSERVER_PORT_ADMIN",Config.NEUROTECT_NSERVER_PORT_ADMIN);
+
+            jsonResult.put("RUN_AS_SERVICE",Config.RUN_AS_SERVICE);
+
+            jsonResult.put("BROWSER_PROVIDER",Config.BROWSER_PROVIDER);
+            
+            jsonResult.put("BOOTH",Config.BOOTH);
+            
+            result = jsonResult.toString();
+        } catch (JSONException ex) {
+        }
+        
+        return result;
     }
     
     public interface JavaScriptListener {
