@@ -24,19 +24,19 @@ public final class LibraryManager {
         String libraryPath = getLibraryPath();
         String jnaLibraryPath = System.getProperty("jna.library.path");
         if (Utils.isNullOrEmpty(jnaLibraryPath)) {
-            System.setProperty("jna.library.path", libraryPath.toString());
+            System.setProperty("jna.library.path", libraryPath);
         } else {
-            System.setProperty("jna.library.path", String.format("%s%s%s", jnaLibraryPath, Utils.PATH_SEPARATOR, libraryPath.toString()));
+            System.setProperty("jna.library.path", String.format("%s%s%s", jnaLibraryPath, Utils.PATH_SEPARATOR, libraryPath));
         }
-        System.setProperty("java.library.path",String.format("%s%s%s", System.getProperty("java.library.path"), Utils.PATH_SEPARATOR, libraryPath.toString()));
+        System.setProperty("java.library.path",String.format("%s%s%s", System.getProperty("java.library.path"), Utils.PATH_SEPARATOR, libraryPath));
         if (Platform.isMac()) {
             String jnaPlatformLibraryPath = System.getProperty("jna.platform.library.path");
             if (Utils.isNullOrEmpty(jnaPlatformLibraryPath)) {
-                System.setProperty("jna.platform.library.path", libraryPath.toString());
+                System.setProperty("jna.platform.library.path", libraryPath);
             } else {
-                System.setProperty("jna.platform.library.path", String.format("%s%s%s", jnaPlatformLibraryPath, Utils.PATH_SEPARATOR, libraryPath.toString()));
+                System.setProperty("jna.platform.library.path", String.format("%s%s%s", jnaPlatformLibraryPath, Utils.PATH_SEPARATOR, libraryPath));
             }
-            System.setProperty("java.platform.library.path",String.format("%s%s%s", System.getProperty("java.platform.library.path"), Utils.PATH_SEPARATOR, libraryPath.toString()));
+            System.setProperty("java.platform.library.path",String.format("%s%s%s", System.getProperty("java.platform.library.path"), Utils.PATH_SEPARATOR, libraryPath));
         }
         try {
             Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
