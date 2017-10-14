@@ -141,7 +141,6 @@ public class Neurotec implements IFingerDevice {
         NSubject subject = new NSubject();
         
         try {
-            NImage[] imageBinaries = new NImage[fingerBase64Images.length];
             for (int fingerBase64ImageIdx = 0; fingerBase64ImageIdx < fingerBase64Images.length; fingerBase64ImageIdx++) {
                 NFPosition fingerIndexPosition = Utils.getNFPositionByIndex(fingerIndexPositions[fingerBase64ImageIdx]);
                 String fingerBase64Image = fingerBase64Images[fingerBase64ImageIdx];
@@ -162,14 +161,11 @@ public class Neurotec implements IFingerDevice {
                     finger.setImage(image);
                     
                     subject.getFingers().add(finger);
-                    
-                    imageBinaries[fingerBase64ImageIdx] = finger.getBinarizedImage();
                 }
             }
             
             TemplateCreationHandler templateCreationHandler = new TemplateCreationHandler(subject);
-            templateCreationHandler.setImageBinaries(imageBinaries);
-            templateCreationHandler.setCreateTemplateListener(createTemplateListener);
+                templateCreationHandler.setCreateTemplateListener(createTemplateListener);
             
             NBiometricTask biometricTask = mBiometricClient.createTask(EnumSet.of(NBiometricOperation.CREATE_TEMPLATE), subject);
             mBiometricClient.performTask(biometricTask, null, templateCreationHandler);
@@ -302,18 +298,12 @@ public class Neurotec implements IFingerDevice {
 
         protected CreateTemplateListener mCreateTemplateListener;
         protected NSubject mSubject;
-        protected NImage[] mImageBinaries;
         
         public TemplateCreationHandler(final NSubject subject) {
             super();
             
             mSubject = subject;
-            mImageBinaries = null;
             mCreateTemplateListener = null;
-        }
-        
-        public void setImageBinaries(NImage[] imageBinaries) {
-            mImageBinaries = imageBinaries;
         }
         
         public void setCreateTemplateListener(final CreateTemplateListener createTemplateListener) {
@@ -326,8 +316,20 @@ public class Neurotec implements IFingerDevice {
             if (status == NBiometricStatus.OK) {
                 if (mCreateTemplateListener != null) {
                     byte[] templateBytes = mSubject.getTemplate().save().toByteArray();
+                    
+                    int fingerSize = mSubject.getFingers().size();
+                    String[] imagesBinaryBase64 = new String[fingerSize];
+                    int[] qualities = new int[fingerSize];
+                    for (int fingerIdx = 0; fingerIdx < fingerSize; fingerIdx++) {
+                        NFinger nFinger = mSubject.getFingers().get(fingerIdx);
+                        NImage nImage = nFinger.getBinarizedImage();
+                        if (nImage != null)
+                            imagesBinaryBase64[fingerIdx] = ImageHelper.jpegToBase64(nImage.toImage());
+                        qualities[fingerIdx] = nFinger.getObjects().get(0).getQuality();
+                    }
+                    
                     String base64Encoded = Base64.encodeBase64String(templateBytes);
-                    mCreateTemplateListener.onTemplateCreateSuccess(base64Encoded, null, null);
+                    mCreateTemplateListener.onTemplateCreateSuccess(base64Encoded, imagesBinaryBase64, qualities);
                 }
             } else if (status == NBiometricStatus.BAD_OBJECT) {
                 if (mCreateTemplateListener != null)
