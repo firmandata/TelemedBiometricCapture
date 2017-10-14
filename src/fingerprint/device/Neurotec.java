@@ -29,29 +29,28 @@ import org.apache.commons.codec.binary.Base64;
 
 public class Neurotec implements IFingerDevice {
 
-    protected final NBiometricClient mBiometricClient;
+    protected final NBiometricClient mBiometricClientDevice;
+    protected final NBiometricClient mBiometricClientConnection;
     
     protected boolean mCapturing;
     
     protected IFingerDeviceEvent mFingerDeviceEvent;
     
     public Neurotec() {
-        mBiometricClient = new NBiometricClient();
-        mBiometricClient.setFingersReturnBinarizedImage(true);
-        mBiometricClient.getRemoteConnections().addToCluster(Config.NEUROTECT_NSERVER_HOST, Config.NEUROTECT_NSERVER_PORT, Config.NEUROTECT_NSERVER_PORT_ADMIN);
+        mBiometricClientDevice = new NBiometricClient();
+        mBiometricClientDevice.setFingersReturnBinarizedImage(true);
         if (!Config.RUN_AS_SERVICE) {
-            mBiometricClient.setUseDeviceManager(true);
+            mBiometricClientDevice.setUseDeviceManager(true);
         
-            NDeviceManager deviceManager = mBiometricClient.getDeviceManager();
+            NDeviceManager deviceManager = mBiometricClientDevice.getDeviceManager();
             deviceManager.setDeviceTypes(EnumSet.of(NDeviceType.FINGER_SCANNER));
             deviceManager.initialize();
         }
         
         mCapturing = false;
-    }
-    
-    public NBiometricClient getBiometricClient() {
-        return mBiometricClient;
+        
+        mBiometricClientConnection = new NBiometricClient();
+        mBiometricClientConnection.getRemoteConnections().addToCluster(Config.NEUROTECT_NSERVER_HOST, Config.NEUROTECT_NSERVER_PORT, Config.NEUROTECT_NSERVER_PORT_ADMIN);
     }
     
     @Override
@@ -69,7 +68,7 @@ public class Neurotec implements IFingerDevice {
         
         if (!mCapturing) {
             NFScanner nFScanner = null;
-            NDeviceManager deviceManager = mBiometricClient.getDeviceManager();
+            NDeviceManager deviceManager = mBiometricClientDevice.getDeviceManager();
             if (deviceManager != null) {
                 for (NDevice device : deviceManager.getDevices())
                 {
@@ -89,7 +88,7 @@ public class Neurotec implements IFingerDevice {
                 NSubject subject = new NSubject();
                 subject.getFingers().add(finger);
 
-                mBiometricClient.setFingerScanner(nFScanner);
+                mBiometricClientDevice.setFingerScanner(nFScanner);
                 
                 mCapturing = true;
                 isStart = true;
@@ -99,8 +98,8 @@ public class Neurotec implements IFingerDevice {
                         mFingerDeviceEvent.onFingerDeviceStartCapture();
                 }
 
-                NBiometricTask biometricTask = mBiometricClient.createTask(EnumSet.of(NBiometricOperation.CAPTURE, NBiometricOperation.CREATE_TEMPLATE), subject);
-                mBiometricClient.performTask(biometricTask, null, new CaptureCompletionHandler(subject));
+                NBiometricTask biometricTask = mBiometricClientDevice.createTask(EnumSet.of(NBiometricOperation.CAPTURE, NBiometricOperation.CREATE_TEMPLATE), subject);
+                mBiometricClientDevice.performTask(biometricTask, null, new CaptureCompletionHandler(subject));
             }
         }
         
@@ -118,12 +117,12 @@ public class Neurotec implements IFingerDevice {
         
         if (mCapturing) {
             // mBiometricClient.cancel();
-            NFScanner fingerScanner = mBiometricClient.getFingerScanner();
+            NFScanner fingerScanner = mBiometricClientDevice.getFingerScanner();
             if (fingerScanner != null) {
                 fingerScanner.cancel();
                 fingerScanner.close();
                 
-                mBiometricClient.setFingerScanner(null);
+                mBiometricClientDevice.setFingerScanner(null);
             }
             
             mCapturing = false;
@@ -167,8 +166,8 @@ public class Neurotec implements IFingerDevice {
             TemplateCreationHandler templateCreationHandler = new TemplateCreationHandler(subject);
                 templateCreationHandler.setCreateTemplateListener(createTemplateListener);
             
-            NBiometricTask biometricTask = mBiometricClient.createTask(EnumSet.of(NBiometricOperation.CREATE_TEMPLATE), subject);
-            mBiometricClient.performTask(biometricTask, null, templateCreationHandler);
+            NBiometricTask biometricTask = mBiometricClientDevice.createTask(EnumSet.of(NBiometricOperation.CREATE_TEMPLATE), subject);
+            mBiometricClientDevice.performTask(biometricTask, null, templateCreationHandler);
         } catch (Exception ex) {
             if (createTemplateListener != null)
                 createTemplateListener.onTemplateCreateFailed(ex.getMessage());
@@ -192,7 +191,7 @@ public class Neurotec implements IFingerDevice {
             TemplateAddHandler templateAddHandler = new TemplateAddHandler(id);
             templateAddHandler.setTemplateAddListener(templateAddListener);
             
-            mBiometricClient.performTask(biometricTask, null, templateAddHandler);
+            mBiometricClientConnection.performTask(biometricTask, null, templateAddHandler);
         } catch (Exception ex) {
             if (templateAddListener != null)
                 templateAddListener.onTemplateAddFailed(ex.getMessage());
@@ -211,7 +210,7 @@ public class Neurotec implements IFingerDevice {
             TemplateDeleteHandler templateDeleteHandler = new TemplateDeleteHandler(id);
             templateDeleteHandler.setTemplateAddListener(templateDeleteListener);
             
-            mBiometricClient.performTask(biometricTask, null, templateDeleteHandler);
+            mBiometricClientConnection.performTask(biometricTask, null, templateDeleteHandler);
         } catch (Exception ex) {
             if (templateDeleteListener != null)
                 templateDeleteListener.onTemplateDeleteFailed(ex.getMessage());
@@ -234,7 +233,7 @@ public class Neurotec implements IFingerDevice {
             TemplateIdentifyHandler templateIdentifyHandler = new TemplateIdentifyHandler(subject);
             templateIdentifyHandler.setTemplateAddListener(templateIdentifyListener);
             
-            mBiometricClient.performTask(biometricTask, null, templateIdentifyHandler);
+            mBiometricClientConnection.performTask(biometricTask, null, templateIdentifyHandler);
         } catch (Exception ex) {
             if (templateIdentifyListener != null)
                 templateIdentifyListener.onTemplateIdentifyFailed(ex.getMessage());
