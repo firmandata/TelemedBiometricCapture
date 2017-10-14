@@ -1,6 +1,5 @@
 package controllers;
 
-import com.neurotec.biometrics.NTemplate;
 import fingerprint.device.Neurotec;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,7 +9,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.codec.binary.Base64;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -136,7 +134,7 @@ public class NeurotecServiceController {
         protected void createTemplateFromImages(final String commandId, final int[] fingerIndexPositions, final String[] fingerBase64Images) {
             mNeurotec.createTemplateFromImages(fingerIndexPositions, fingerBase64Images, new Neurotec.CreateTemplateListener() {
                 @Override
-                public void onTemplateCreateSuccess(String templateBase64) {
+                public void onTemplateCreateSuccess(String templateBase64, String[] imagesBinaryBase64, int[] qualities) {
                     String response = null;
 
                     try {
@@ -144,7 +142,23 @@ public class NeurotecServiceController {
                         result.put("commandId", commandId);
                         result.put("status", true);
                         result.put("message", (String) null);
-                        result.put("data", templateBase64);
+                        
+                        JSONObject resultData = new JSONObject();
+                        resultData.put("templateBase64", templateBase64);
+                        if (imagesBinaryBase64 != null) {
+                            JSONArray resultDataImagesBinaryBase64 = new JSONArray();
+                            for (String imageBinaryBase64 : imagesBinaryBase64)
+                                resultDataImagesBinaryBase64.put(imageBinaryBase64);
+                            resultData.put("imagesBinaryBase64", resultDataImagesBinaryBase64);
+                        }
+                        if (qualities != null) {
+                            JSONArray resultDataQualities = new JSONArray();
+                            for (int quality : qualities)
+                                resultDataQualities.put(quality);
+                            resultData.put("qualities", resultDataQualities);
+                        }
+                        result.put("data", resultData);
+                        
                         response = result.toString();
                     } catch (JSONException ex) {
 

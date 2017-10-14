@@ -39,8 +39,14 @@ public class OneTouch implements IFingerDevice {
                     if (image != null) {
                         createTemplateFromImages(new int[] { -1 }, new String[]  { ImageHelper.jpegToBase64(image) }, new Neurotec.CreateTemplateListener() {
                             @Override
-                            public void onTemplateCreateSuccess(String templateBase64) {
-                                mFingerDeviceEvent.onFingerDeviceImageCaptured(templateBase64, image);
+                            public void onTemplateCreateSuccess(String templateBase64, String[] imagesBinaryBase64, int[] qualities) {
+                                String imageBinaryBase64 = null;
+                                if (imagesBinaryBase64.length > 0)
+                                    imageBinaryBase64 = imagesBinaryBase64[0];
+                                int quality = 0;
+                                if (qualities.length > 0)
+                                    quality = qualities[0];
+                                mFingerDeviceEvent.onFingerDeviceImageCaptured(templateBase64, image, ImageHelper.base64ToImage(imageBinaryBase64), quality);
                             }
 
                             @Override
@@ -174,6 +180,8 @@ public class OneTouch implements IFingerDevice {
             boolean status = false;
             String message = null;
             String templateBase64 = null;
+            String[] imagesBinaryBase64 = null;
+            int[] qualities = null;
             
             try {
                 JSONObject JSONObjectReceive = new JSONObject(receiveJsonMessage);
@@ -183,15 +191,32 @@ public class OneTouch implements IFingerDevice {
                     status = JSONObjectReceive.getBoolean("status");
                 if (JSONObjectReceive.has("message"))
                     message = JSONObjectReceive.getString("message");
-                if (JSONObjectReceive.has("data"))
-                    templateBase64 = JSONObjectReceive.getString("data");
+                if (JSONObjectReceive.has("data")) {
+                    JSONObject JSONObjectReceiveData = JSONObjectReceive.getJSONObject("data");
+                    if (JSONObjectReceiveData.has("templateBase64"))
+                        templateBase64 = JSONObjectReceiveData.getString("templateBase64");
+                    if (JSONObjectReceiveData.has("imagesBinaryBase64")) {
+                        JSONArray JSONArrayImageBinaryBase64 = JSONObjectReceiveData.getJSONArray("imagesBinaryBase64");
+                        int JSONArrayImagesBinaryBase64Length = JSONArrayImageBinaryBase64.length();
+                        imagesBinaryBase64 = new String[JSONArrayImagesBinaryBase64Length];
+                        for (int JSONArrayImageBinaryBase64Idx = 0; JSONArrayImageBinaryBase64Idx < JSONArrayImagesBinaryBase64Length; JSONArrayImageBinaryBase64Idx++)
+                            imagesBinaryBase64[JSONArrayImageBinaryBase64Idx] = JSONArrayImageBinaryBase64.getString(JSONArrayImageBinaryBase64Idx);
+                    }
+                    if (JSONObjectReceiveData.has("qualities")) {
+                        JSONArray JSONArrayQuality = JSONObjectReceiveData.getJSONArray("qualities");
+                        int JSONArrayQualityLength = JSONArrayQuality.length();
+                        qualities = new int[JSONArrayQualityLength];
+                        for (int JSONArrayQualityIdx = 0; JSONArrayQualityIdx < JSONArrayQualityLength; JSONArrayQualityIdx++)
+                            qualities[JSONArrayQualityIdx] = JSONArrayQuality.getInt(JSONArrayQualityIdx);
+                    }
+                }
             } catch (JSONException ex) {
                 message = ex.getMessage();
             }
             
             if (createTemplateListener != null) {
                 if (status)
-                    createTemplateListener.onTemplateCreateSuccess(templateBase64);
+                    createTemplateListener.onTemplateCreateSuccess(templateBase64, imagesBinaryBase64, qualities);
                 else
                     createTemplateListener.onTemplateCreateFailed(message);
             }

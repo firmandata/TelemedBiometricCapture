@@ -60,8 +60,8 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
             }
 
             @Override
-            public void onFingerDeviceImageCaptured(String templateBase64, Image image) {
-                mIndexView.setResponseFingerCaptured(templateBase64, image);
+            public void onFingerDeviceImageCaptured(String templateBase64, Image image, Image imageBinary, int quality) {
+                mIndexView.setResponseFingerCaptured(templateBase64, imageBinary);
                 mIndexView.setStatus("The fingerprint was captured.");
             }
             
@@ -149,7 +149,7 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
             public void run() {
                 mFingerDevice.createTemplateFromImages(fingerIndexPositions, fingerBase64Images, new Neurotec.CreateTemplateListener() {
                     @Override
-                    public void onTemplateCreateSuccess(String templateBase64) {
+                    public void onTemplateCreateSuccess(String templateBase64, String[] imagesBinaryBase64, int[] qualities) {
                         mIndexView.setResponseTemplateBase64(templateBase64);
                     }
 

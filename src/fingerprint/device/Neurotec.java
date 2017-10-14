@@ -141,6 +141,7 @@ public class Neurotec implements IFingerDevice {
         NSubject subject = new NSubject();
         
         try {
+            NImage[] imageBinaries = new NImage[fingerBase64Images.length];
             for (int fingerBase64ImageIdx = 0; fingerBase64ImageIdx < fingerBase64Images.length; fingerBase64ImageIdx++) {
                 NFPosition fingerIndexPosition = Utils.getNFPositionByIndex(fingerIndexPositions[fingerBase64ImageIdx]);
                 String fingerBase64Image = fingerBase64Images[fingerBase64ImageIdx];
@@ -159,12 +160,15 @@ public class Neurotec implements IFingerDevice {
                     NFinger finger = new NFinger();
                     finger.setPosition(fingerIndexPosition);
                     finger.setImage(image);
-
+                    
                     subject.getFingers().add(finger);
+                    
+                    imageBinaries[fingerBase64ImageIdx] = finger.getBinarizedImage();
                 }
             }
             
             TemplateCreationHandler templateCreationHandler = new TemplateCreationHandler(subject);
+            templateCreationHandler.setImageBinaries(imageBinaries);
             templateCreationHandler.setCreateTemplateListener(createTemplateListener);
             
             NBiometricTask biometricTask = mBiometricClient.createTask(EnumSet.of(NBiometricOperation.CREATE_TEMPLATE), subject);
@@ -257,12 +261,16 @@ public class Neurotec implements IFingerDevice {
             if (status == NBiometricStatus.OK) {
                 byte quality = mSubject.getFingers().get(0).getObjects().get(0).getQuality();
                 NImage image = mSubject.getFingers().get(0).getImage();
-                if (image != null) {
+                NImage imageBinary = mSubject.getFingers().get(0).getBinarizedImage();
+                if (image != null && imageBinary != null) {
                     if (mFingerDeviceEvent != null) {
                         byte[] templateBytes = mSubject.getTemplate().save().toByteArray();
                         String base64Encoded = Base64.encodeBase64String(templateBytes);
-                        mFingerDeviceEvent.onFingerDeviceImageCaptured(base64Encoded, image.toImage());
+                        mFingerDeviceEvent.onFingerDeviceImageCaptured(base64Encoded, image.toImage(), imageBinary.toImage(), quality);
                     }
+                } else {
+                    if (mFingerDeviceEvent != null)
+                        mFingerDeviceEvent.onFingerDeviceImageCaptureFailed("Finger image failed to capture image.");
                 }
             } else if (status == NBiometricStatus.BAD_OBJECT) {
                 if (mFingerDeviceEvent != null)
@@ -294,12 +302,18 @@ public class Neurotec implements IFingerDevice {
 
         protected CreateTemplateListener mCreateTemplateListener;
         protected NSubject mSubject;
+        protected NImage[] mImageBinaries;
         
         public TemplateCreationHandler(final NSubject subject) {
             super();
             
             mSubject = subject;
+            mImageBinaries = null;
             mCreateTemplateListener = null;
+        }
+        
+        public void setImageBinaries(NImage[] imageBinaries) {
+            mImageBinaries = imageBinaries;
         }
         
         public void setCreateTemplateListener(final CreateTemplateListener createTemplateListener) {
@@ -313,7 +327,7 @@ public class Neurotec implements IFingerDevice {
                 if (mCreateTemplateListener != null) {
                     byte[] templateBytes = mSubject.getTemplate().save().toByteArray();
                     String base64Encoded = Base64.encodeBase64String(templateBytes);
-                    mCreateTemplateListener.onTemplateCreateSuccess(base64Encoded);
+                    mCreateTemplateListener.onTemplateCreateSuccess(base64Encoded, null, null);
                 }
             } else if (status == NBiometricStatus.BAD_OBJECT) {
                 if (mCreateTemplateListener != null)
@@ -445,7 +459,7 @@ public class Neurotec implements IFingerDevice {
     }
     
     public interface CreateTemplateListener {
-        void onTemplateCreateSuccess(String templateBase64);
+        void onTemplateCreateSuccess(String templateBase64, String[] imagesBinaryBase64, int[] qualities);
         void onTemplateCreateFailed(String message);
     }
     
