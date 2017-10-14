@@ -63,6 +63,9 @@ public class IndexController implements JavaScriptController.JavaScriptListener 
             public void onFingerDeviceImageCaptured(String templateBase64, Image image, Image imageBinary, int quality) {
                 mIndexView.setResponseFingerCaptured(templateBase64, imageBinary);
                 mIndexView.setStatus("The fingerprint was captured.");
+                
+                // set last image captured
+                mImage = image;
             }
             
             @Override

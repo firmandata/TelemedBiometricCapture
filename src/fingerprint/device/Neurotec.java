@@ -16,7 +16,6 @@ import com.neurotec.devices.NFScanner;
 import com.neurotec.images.NImage;
 import com.neurotec.io.NBuffer;
 import com.neurotec.util.concurrent.CompletionHandler;
-import java.awt.Image;
 import constants.Config;
 
 import helpers.ImageHelper;
@@ -38,6 +37,7 @@ public class Neurotec implements IFingerDevice {
     
     public Neurotec() {
         mBiometricClient = new NBiometricClient();
+        mBiometricClient.setFingersReturnBinarizedImage(true);
         mBiometricClient.getRemoteConnections().addToCluster(Config.NEUROTECT_NSERVER_HOST, Config.NEUROTECT_NSERVER_PORT, Config.NEUROTECT_NSERVER_PORT_ADMIN);
         if (!Config.RUN_AS_SERVICE) {
             mBiometricClient.setUseDeviceManager(true);
