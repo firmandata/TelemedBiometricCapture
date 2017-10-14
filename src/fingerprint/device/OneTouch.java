@@ -41,11 +41,15 @@ public class OneTouch implements IFingerDevice {
                             @Override
                             public void onTemplateCreateSuccess(String templateBase64, String[] imagesBinaryBase64, int[] qualities) {
                                 String imageBinaryBase64 = null;
-                                if (imagesBinaryBase64.length > 0)
-                                    imageBinaryBase64 = imagesBinaryBase64[0];
+                                if (imagesBinaryBase64 != null) {
+                                    if (imagesBinaryBase64.length > 0)
+                                        imageBinaryBase64 = imagesBinaryBase64[0];
+                                }
                                 int quality = 0;
-                                if (qualities.length > 0)
-                                    quality = qualities[0];
+                                if (qualities != null) {
+                                    if (qualities.length > 0)
+                                        quality = qualities[0];
+                                }
                                 mFingerDeviceEvent.onFingerDeviceImageCaptured(templateBase64, image, ImageHelper.base64ToImage(imageBinaryBase64), quality);
                             }
 
